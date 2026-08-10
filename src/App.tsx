@@ -8,12 +8,21 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { StatsPanel } from './components/StatsPanel';
 import { TabBar } from './components/TabBar';
 import { SettingsIcon } from './components/icons';
-import { HANGUL_CHARACTERS } from './data/hangul';
+import { CHARACTERS_BY_ID, HANGUL_CHARACTERS } from './data/hangul';
 import { TABS } from './data/tabs';
+import { useLearningTelemetry } from './hooks/useLearningTelemetry';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { usePersistedState } from './hooks/usePersistedState';
 import { useQuiz } from './hooks/useQuiz';
-import { countMastered, recordAnswer } from './lib/progress';
+import {
+  trackCategoryChanged,
+  trackChartOpened,
+  trackCharacterMastered,
+  trackQuizAnswer,
+  trackReviewStarted,
+  trackTestModeStarted,
+} from './lib/analytics';
+import { countMastered, isMastered, recordAnswer } from './lib/progress';
 import { getReviewCandidates } from './lib/quiz';
 import { isSpeechSupported, speakHangul } from './lib/speech';
 import type { AnswerResult, HangulCategory, QuizMode } from './types';
@@ -46,15 +55,25 @@ export default function App() {
 
   const hasNothingToReview = reviewMode && reviewCandidates.length === 0;
 
+  const telemetry = useLearningTelemetry();
+
   const handleAnswered = useCallback(
     (characterId: string, result: AnswerResult, sessionStreak: number) => {
+      const nextProgress = recordAnswer(progress, characterId, result, Date.now());
       setState((current) => ({
         ...current,
-        progress: recordAnswer(current.progress, characterId, result, Date.now()),
+        progress: nextProgress,
         bestStreak: Math.max(current.bestStreak, sessionStreak),
       }));
+
+      const { category } = CHARACTERS_BY_ID[characterId];
+      telemetry.recordAnswer(result);
+      trackQuizAnswer({ mode, category, result, reviewMode, testMode });
+      if (!isMastered(progress[characterId]) && isMastered(nextProgress[characterId])) {
+        trackCharacterMastered(category);
+      }
     },
-    [setState],
+    [mode, progress, reviewMode, setState, telemetry, testMode],
   );
 
   const quiz = useQuiz({
@@ -89,7 +108,8 @@ export default function App() {
     // Consulting the chart taints the card that is already on screen.
     markAssisted();
     setChartOpen(true);
-  }, [chartOpen, markAssisted, testMode]);
+    trackChartOpened({ mode, mobile: !isDesktop });
+  }, [chartOpen, isDesktop, markAssisted, mode, testMode]);
 
   const handleSelect = useCallback(
     (optionId: string) => {
@@ -111,16 +131,18 @@ export default function App() {
 
   const toggleCategory = useCallback(
     (category: HangulCategory) => {
-      setState((current) => {
-        const enabled = current.settings.enabledCategories;
-        const next = enabled.includes(category)
-          ? enabled.filter((item) => item !== category)
-          : [...enabled, category];
-        if (next.length === 0) return current;
-        return { ...current, settings: { ...current.settings, enabledCategories: next } };
-      });
+      const next = enabledCategories.includes(category)
+        ? enabledCategories.filter((item) => item !== category)
+        : [...enabledCategories, category];
+      if (next.length === 0) return;
+
+      setState((current) => ({
+        ...current,
+        settings: { ...current.settings, enabledCategories: next },
+      }));
+      trackCategoryChanged(next.length);
     },
-    [setState],
+    [enabledCategories, setState],
   );
 
   const toggleSound = useCallback(() => {
@@ -136,16 +158,25 @@ export default function App() {
       settings: { ...current.settings, testMode: !current.settings.testMode },
     }));
     setChartOpen(false);
-  }, [setState]);
+    if (!testMode) trackTestModeStarted();
+  }, [setState, testMode]);
 
-  const toggleReviewMode = useCallback(() => setReviewMode((current) => !current), []);
+  const toggleReviewMode = useCallback(() => {
+    if (!reviewMode) trackReviewStarted(reviewCandidates.length);
+    setReviewMode(!reviewMode);
+  }, [reviewCandidates.length, reviewMode]);
+
+  const handleRestartSession = useCallback(() => {
+    telemetry.completeSession();
+    resetSession();
+  }, [resetSession, telemetry]);
 
   const handleClearProgress = useCallback(() => {
     resetAll();
     setReviewMode(false);
     setConfirmOpen(false);
-    resetSession();
-  }, [resetAll, resetSession]);
+    handleRestartSession();
+  }, [handleRestartSession, resetAll]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -308,7 +339,7 @@ export default function App() {
             soundEnabled={settings.soundEnabled}
             speechSupported={speechSupported}
             onToggleChart={toggleChart}
-            onRestartSession={resetSession}
+            onRestartSession={handleRestartSession}
             onToggleReview={toggleReviewMode}
             onToggleSound={toggleSound}
             onRequestClearProgress={() => setConfirmOpen(true)}

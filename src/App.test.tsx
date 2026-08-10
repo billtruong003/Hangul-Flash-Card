@@ -1,105 +1,19 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { HANGUL_CHARACTERS } from './data/hangul';
 import { CORRECT_DELAY_MS, INCORRECT_DELAY_MS } from './hooks/useQuiz';
 import { LEGACY_STORAGE_KEY, STORAGE_KEY, createDefaultState } from './lib/storage';
-import type { CharacterProgress, PersistedState } from './types';
-
-function answerButtons(): HTMLElement[] {
-  return screen.queryAllByRole('button', { name: /^Đáp án/ });
-}
-
-function promptCharacter() {
-  const promptText = document.querySelector('#quiz-panel [lang="ko"]')?.textContent ?? '';
-  const character = HANGUL_CHARACTERS.find((item) => item.character === promptText);
-  if (!character) throw new Error(`Không nhận ra chữ đang hiển thị: "${promptText}"`);
-  return character;
-}
-
-function buttonsSplitByCorrectness() {
-  const { pronunciation } = promptCharacter();
-  const buttons = answerButtons();
-  const correct = buttons.find((button) =>
-    button.getAttribute('aria-label')?.endsWith(`đọc là ${pronunciation}`),
-  );
-  if (!correct) throw new Error('Không tìm thấy đáp án đúng trong danh sách lựa chọn');
-  return { correct, wrong: buttons.filter((button) => button !== correct) };
-}
-
-function statValue(label: string): string {
-  const stats = screen.getByRole('region', { name: 'Thống kê phiên học' });
-  const labelElement = within(stats).getByText(label);
-  return labelElement.parentElement?.firstElementChild?.textContent ?? '';
-}
-
-function readStoredState(): PersistedState {
-  return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}');
-}
-
-function chartToggle(): HTMLElement {
-  return screen.getByRole('button', { name: /^(Hiện|Ẩn) bảng Hangul$/ });
-}
-
-function openChart() {
-  const toggle = chartToggle();
-  toggle.focus();
-  fireEvent.click(toggle);
-  return toggle;
-}
-
-function seedState(overrides: Partial<PersistedState>) {
-  window.localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ ...createDefaultState(), ...overrides }),
-  );
-}
-
-function progressEntry(overrides: Partial<CharacterProgress> = {}): CharacterProgress {
-  return {
-    shownCount: 0,
-    unassistedCorrectCount: 0,
-    assistedCorrectCount: 0,
-    incorrectCount: 0,
-    currentUnassistedCorrectStreak: 0,
-    lastShownAt: null,
-    ...overrides,
-  };
-}
-
-/** Every basic consonant one unassisted correct answer away from mastery. */
-function seedNearlyMasteredConsonants() {
-  seedState({
-    progress: Object.fromEntries(
-      HANGUL_CHARACTERS.filter((character) => character.category === 'basic-consonant').map(
-        (character) => [
-          character.id,
-          progressEntry({
-            shownCount: 4,
-            unassistedCorrectCount: 4,
-            currentUnassistedCorrectStreak: 4,
-            lastResult: 'correct-unassisted',
-          }),
-        ],
-      ),
-    ),
-    settings: { enabledCategories: ['basic-consonant'], soundEnabled: false, testMode: false },
-  });
-}
-
-/** jsdom has no matchMedia, so the mobile drawer is the default in these tests. */
-function stubDesktopViewport() {
-  vi.stubGlobal('matchMedia', (media: string) => ({
-    matches: true,
-    media,
-    onchange: null,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-  }));
-}
+import {
+  answerButtons,
+  buttonsSplitByCorrectness,
+  chartToggle,
+  openChart,
+  promptCharacter,
+  readStoredState,
+  seedNearlyMasteredConsonants,
+  statValue,
+  stubDesktopViewport,
+} from './test/appHarness';
 
 afterEach(() => {
   vi.useRealTimers();

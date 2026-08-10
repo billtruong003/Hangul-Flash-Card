@@ -18,6 +18,8 @@
     "rollup": "npm:@rollup/wasm-node@^4.55.1"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

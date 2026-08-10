@@ -111,20 +111,24 @@ src/
     hangul.ts       40 chữ cái đã gõ kiểu, kèm giải thích và danh sách chữ dễ nhầm
     tabs.ts         Nhãn hai tab
   hooks/
-    useDialogBehavior.ts  Bẫy focus, Esc, trả focus — dùng chung cho modal và drawer
-    useMediaQuery.ts      Phân biệt desktop / mobile khi CSS không đủ
-    usePersistedState.ts  Đọc/ghi LocalStorage
-    useQuiz.ts            Vòng đời câu hỏi: sinh, đánh dấu trợ giúp, trả lời, chuyển tiếp
+    useDialogBehavior.ts    Bẫy focus, Esc, trả focus — dùng chung cho modal và drawer
+    useLearningTelemetry.ts Bộ đếm phiên học trong bộ nhớ cho sự kiện analytics
+    useMediaQuery.ts        Phân biệt desktop / mobile khi CSS không đủ
+    usePersistedState.ts    Đọc/ghi LocalStorage
+    useQuiz.ts              Vòng đời câu hỏi: sinh, đánh dấu trợ giúp, trả lời, chuyển tiếp
   lib/
+    analytics.ts    Lớp adapter analytics — nơi duy nhất biết tới Vercel
     progress.ts     Tính độ chính xác, điều kiện "đã thuộc", cập nhật tiến độ
     quiz.ts         Trọng số thích ứng, chọn chữ kế tiếp, sinh đáp án, lọc chữ sai
     speech.ts       Bọc Web Speech API
     storage.ts      Đọc/ghi và **kiểm tra** dữ liệu LocalStorage
   test/
-    fixtures.ts     PRNG có seed + factory cho test
+    appHarness.ts   Helper thao tác giao diện dùng chung cho test cấp ứng dụng
+    fixtures.ts     PRNG có seed, factory tiến độ, transport analytics ghi lại
     setup.ts        Cấu hình jsdom cho Vitest
   types/index.ts    Kiểu dùng chung
   App.tsx           Ghép các phần lại, xử lý phím tắt và trạng thái bảng tra cứu
+  main.tsx          Gốc ứng dụng — nơi gắn <Analytics /> và <SpeedInsights />
 ```
 
 Nguyên tắc phân tách: `lib/` là các hàm thuần, không biết gì về React; `hooks/` giữ trạng thái;
@@ -229,9 +233,102 @@ ghi sang khóa mới, rồi khóa cũ mới bị xóa — không mất tiến đ
 Nút **Bắt đầu lại phiên** chỉ xóa thống kê phiên, giữ nguyên tiến độ dài hạn. Nút **Xóa toàn bộ tiến
 độ** mở hộp thoại xác nhận tự viết (không dùng `confirm()` của trình duyệt) và xóa sạch dữ liệu.
 
+## Analytics
+
+Ứng dụng gửi một ít dữ liệu sử dụng ẩn danh về Vercel để hiểu người học dùng sản phẩm thế nào. Không
+có đăng nhập, không có backend, không có cơ sở dữ liệu — và tiến độ học **không bao giờ rời khỏi máy
+bạn**.
+
+### Cài đặt
+
+Hai gói được dùng:
+
+```bash
+npm install @vercel/analytics @vercel/speed-insights
+```
+
+Đây là dự án Vite + React, không phải Next.js, nên phải nhập từ đường dẫn `/react`:
+
+```tsx
+// src/main.tsx
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+```
+
+Cả hai được gắn đúng một lần ở `src/main.tsx` — gốc thật của ứng dụng, không phải trong `App.tsx`. Nhờ
+vậy `App` và toàn bộ test component không hề nạp gói của Vercel. Hai component này không vẽ gì ra màn
+hình và tự tắt khi chạy ngoài môi trường Vercel, nên `npm run dev`, test và build đều không bị ảnh
+hưởng.
+
+Sau khi deploy, cần bật thủ công trong dashboard Vercel: tab **Analytics** → _Enable_, và tab **Speed
+Insights** → _Enable_. Chưa bật thì script vẫn nạp nhưng không có báo cáo nào.
+
+### Kiến trúc
+
+`src/lib/analytics.ts` là **nơi duy nhất** biết tới Vercel Analytics. Component và hook chỉ gọi các hàm
+mang nghĩa nghiệp vụ (`trackQuizAnswer`, `trackChartOpened`…), nên đổi nhà cung cấp sau này chỉ cần
+sửa một file.
+
+Bên trong là một lớp transport thay được:
+
+- Mặc định ở production: gọi `track()` của `@vercel/analytics`.
+- Mặc định khi chạy Vitest (`import.meta.env.MODE === 'test'`): `null`, tức là không làm gì. Không test
+  nào phải mock gói của Vercel.
+- Test nào cần quan sát sự kiện thì tự gắn transport ghi lại bằng `recordAnalytics()`.
+
+Mọi lần gửi đều nằm trong `try/catch`. Analytics hỏng thì người học không bao giờ biết.
+
+`src/hooks/useLearningTelemetry.ts` giữ bộ đếm phiên học trong bộ nhớ (`useRef`) để phát hai sự kiện
+bắt đầu/kết thúc phiên. Nó **không** ghi vào LocalStorage và biến mất khi tải lại trang.
+
+`lib/quiz.ts`, `lib/progress.ts` và hàm tính trọng số vẫn thuần tuyệt đối — không có lời gọi analytics
+nào trong đó.
+
+### Sự kiện được thu thập
+
+| Sự kiện                       | Khi nào                                                                                 | Thuộc tính                                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `quiz_answer`                 | Mỗi lần trả lời một câu                                                                 | `direction`, `category`, `result`, `reviewMode`, `testMode` |
+| `character_mastered`          | Đúng lúc một chữ chuyển sang "đã thuộc"                                                 | `category`                                                  |
+| `chart_opened`                | Người dùng chủ động mở bảng tra cứu                                                     | `direction`, `mobile`                                       |
+| `review_started`              | Bật chế độ ôn chữ sai                                                                   | `mistakeBucket`: `1-5` \| `6-10` \| `11+`                   |
+| `test_mode_started`           | Bật chế độ kiểm tra                                                                     | không có                                                    |
+| `learning_session_started`    | Câu trả lời đầu tiên của một phiên                                                      | không có                                                    |
+| `learning_session_completed`  | Người dùng bấm "Bắt đầu lại phiên" hoặc xóa tiến độ, sau khi đã trả lời ít nhất một câu | `answers`, `accuracy`, `assisted` (đều đã gom nhóm)         |
+| `learning_categories_changed` | Bật/tắt một nhóm chữ                                                                    | `enabledCount`                                              |
+
+Số liệu phiên học được gom nhóm trước khi rời khỏi trình duyệt, không bao giờ gửi con số chính xác:
+
+- `answers`: `1-9` | `10-24` | `25-49` | `50+`
+- `accuracy`: `<50` | `50-69` | `70-84` | `85+` — tính theo _độ chính xác tự lực_, tức số câu đúng
+  không tra bảng chia cho tổng số câu đã trả lời
+- `assisted`: `0` | `1-4` | `5+`
+
+Sự kiện chỉ phát khi người dùng thật sự hành động. React render lại không sinh thêm sự kiện, và
+`character_mastered` chỉ phát đúng một lần ở thời điểm chuyển trạng thái chứ không phát lại mỗi lần
+trả lời đúng một chữ đã thuộc.
+
+### Quyền riêng tư
+
+Ứng dụng vẫn ẩn danh và local-first. Những thứ **không bao giờ** được gửi đi:
+
+- nội dung LocalStorage,
+- tiến độ học chi tiết của từng chữ,
+- định danh người dùng cố định, cookie, hay dấu vân tay trình duyệt,
+- chữ Hangul cụ thể đang được hỏi,
+- lịch sử đúng/sai theo từng chữ,
+- bất cứ thông tin nào cho phép dựng lại quá trình học của một cá nhân.
+
+Chỉ có metadata gộp ở mức nhóm chữ và giá trị đã gom nhóm được gửi đi. Toàn bộ tiến độ học nằm trong
+LocalStorage của trình duyệt bạn; xóa dữ liệu trang web là xóa sạch. Không cần tài khoản, không cần
+đăng nhập, không có backend nào lưu gì về bạn.
+
+Nếu muốn không gửi gì cả, gỡ hai dòng `<Analytics />` và `<SpeedInsights />` trong `src/main.tsx` —
+phần còn lại của ứng dụng chạy y nguyên.
+
 ## Kiểm thử
 
-96 test bằng Vitest:
+137 test bằng Vitest:
 
 - `src/lib/quiz.test.ts` (28) — xáo trộn, sinh đáp án (có đáp án đúng, đủ 4 lựa chọn, không trùng id,
   không trùng nhãn phát âm, ưu tiên chữ dễ nhầm và cùng nhóm), thứ tự trọng số thích ứng (vừa sai >
@@ -246,8 +343,18 @@ Nút **Bắt đầu lại phiên** chỉ xóa thống kê phiên, giữ nguyên 
   tắt, ghi LocalStorage, chế độ ôn chữ sai, hộp thoại xác nhận, đổi nhóm chữ, nâng cấp dữ liệu cũ,
   drawer đóng bằng `Esc` và trả focus, bảng dạng cột trên desktop, toàn bộ luật tính điểm có trợ giúp,
   và chế độ kiểm tra.
+- `src/lib/analytics.test.ts` (16) — từng hàm gom nhóm, hình dạng payload của mọi sự kiện, và transport
+  an toàn (im lặng mặc định, nuốt lỗi, gỡ được).
+- `src/App.analytics.test.tsx` (25) — sự kiện phát ra từ thao tác thật: một câu trả lời một sự kiện,
+  render lại không nhân đôi, câu có trợ giúp báo đúng `result`, `character_mastered` chỉ phát lúc
+  chuyển trạng thái, `chart_opened` một lần mỗi lần mở, `review_started` / `test_mode_started` chỉ khi
+  bật, vòng đời phiên học, và analytics hỏng không làm hỏng bài quiz.
 
-Các test thuần dùng PRNG có seed (`src/test/fixtures.ts`) nên kết quả lặp lại được.
+Các test thuần dùng PRNG có seed (`src/test/fixtures.ts`) nên kết quả lặp lại được. Helper thao tác
+giao diện dùng chung nằm ở `src/test/appHarness.ts`.
+
+Test không đụng tới cài đặt bên trong gói của Vercel — chỉ kiểm tra lớp adapter và cách ứng dụng gọi
+nó.
 
 ## Trợ năng
 
@@ -276,5 +383,6 @@ xóa khối `overrides` rồi `npm install` lại để dùng bản native.
 
 ## Công nghệ
 
-Vite · React 19 · TypeScript · Tailwind CSS v4 · Vitest · ESLint · Prettier. Không dùng thư viện
-component, không backend, không cơ sở dữ liệu.
+Vite · React 19 · TypeScript · Tailwind CSS v4 · Vitest · ESLint · Prettier · Vercel Web Analytics ·
+Vercel Speed Insights. Không dùng thư viện component, không backend, không cơ sở dữ liệu, không đăng
+nhập.
