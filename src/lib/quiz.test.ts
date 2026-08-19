@@ -51,14 +51,20 @@ describe('buildAnswerOptions', () => {
     }
   });
 
-  it('keeps ㅙ and ㅞ apart even though both read "we"', () => {
+  it('lets ㅙ and ㅞ sit side by side now that they romanize differently', () => {
+    // Under the old Vietnamese-approximated labels both of these read "we", so
+    // one had to be filtered out or the question had two right answers. Revised
+    // Romanization separates them into wae and we, which turns a former conflict
+    // into the most useful distractor pair there is: they sound nearly identical
+    // and can only be told apart by spelling.
     const wae = CHARACTERS_BY_ID['v-wae'];
-    for (let i = 0; i < 200; i += 1) {
-      const options = buildAnswerOptions(wae, HANGUL_CHARACTERS, seededRandom(i + 1));
-      const ids = options.map((option) => option.id);
-      expect(ids).toContain('v-wae');
-      expect(ids).not.toContain('v-we');
-    }
+    expect(wae.romaja).not.toBe(CHARACTERS_BY_ID['v-we'].romaja);
+
+    const seenTogether = Array.from({ length: 200 }, (_, i) =>
+      buildAnswerOptions(wae, HANGUL_CHARACTERS, seededRandom(i + 1)).map((option) => option.id),
+    );
+    for (const ids of seenTogether) expect(ids).toContain('v-wae');
+    expect(seenTogether.some((ids) => ids.includes('v-we'))).toBe(true);
   });
 
   it('prefers declared confusables as distractors', () => {

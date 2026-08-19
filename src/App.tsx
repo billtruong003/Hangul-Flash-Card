@@ -14,6 +14,7 @@ import { useLearningTelemetry } from './hooks/useLearningTelemetry';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { usePersistedState } from './hooks/usePersistedState';
 import { useQuiz } from './hooks/useQuiz';
+import { useSpeech } from './hooks/useSpeech';
 import {
   trackCategoryChanged,
   trackChartOpened,
@@ -24,14 +25,16 @@ import {
 } from './lib/analytics';
 import { countMastered, isMastered, recordAnswer } from './lib/progress';
 import { getReviewCandidates } from './lib/quiz';
-import { isSpeechSupported, speakHangul } from './lib/speech';
+import { primeSpeechOnGesture, speak, type SpeakOptions } from './lib/speech';
 import type { AnswerResult, HangulCategory, QuizMode } from './types';
 
-const speechSupported = isSpeechSupported();
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
 export default function App() {
   const { state, setState, resetAll } = usePersistedState();
+  // Voice availability only settles asynchronously, so this cannot be hoisted
+  // to a module constant the way it used to be.
+  const speech = useSpeech();
   const [mode, setMode] = useState<QuizMode>('char-to-sound');
   const [reviewMode, setReviewMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -114,20 +117,35 @@ export default function App() {
   const handleSelect = useCallback(
     (optionId: string) => {
       if (!question) return;
+      primeSpeechOnGesture();
       answer(optionId);
       if (settings.soundEnabled && optionId === question.prompt.id) {
-        speakHangul(question.prompt.character);
+        speak(question.prompt.demoSyllable);
       }
     },
     [answer, question, settings.soundEnabled],
   );
 
   const handleSpeak = useCallback(
-    (text: string) => {
-      if (settings.soundEnabled) speakHangul(text);
+    (text: string, options?: SpeakOptions) => {
+      primeSpeechOnGesture();
+      if (settings.soundEnabled) speak(text, options);
     },
     [settings.soundEnabled],
   );
+
+  /**
+   * On the "Chữ → Âm" tab the sound *is* the answer, so listening before
+   * answering counts as assistance — the same reasoning that makes opening the
+   * chart count. On the reverse tab hearing the sound reveals nothing about
+   * which glyph writes it, so it stays free.
+   */
+  const handleSpeakPrompt = useCallback(() => {
+    if (!question) return;
+    primeSpeechOnGesture();
+    if (mode === 'char-to-sound' && !feedback) markAssisted();
+    if (settings.soundEnabled) speak(question.prompt.demoSyllable);
+  }, [feedback, markAssisted, mode, question, settings.soundEnabled]);
 
   const toggleCategory = useCallback(
     (category: HangulCategory) => {
@@ -146,6 +164,9 @@ export default function App() {
   );
 
   const toggleSound = useCallback(() => {
+    // Turning sound on is a real user gesture, which is the only moment iOS
+    // Safari lets us unlock the speech queue for later, timer-driven calls.
+    primeSpeechOnGesture();
     setState((current) => ({
       ...current,
       settings: { ...current.settings, soundEnabled: !current.settings.soundEnabled },
@@ -220,7 +241,7 @@ export default function App() {
     <HangulChart
       progress={progress}
       highlightedId={mode === 'char-to-sound' ? (question?.prompt.id ?? null) : null}
-      canSpeak={speechSupported && settings.soundEnabled}
+      canSpeak={speech.hasKoreanVoice && settings.soundEnabled}
       onConsult={markAssisted}
       onSpeak={handleSpeak}
     />
@@ -320,9 +341,9 @@ export default function App() {
               question={question}
               feedback={feedback}
               mode={mode}
-              canSpeak={speechSupported && settings.soundEnabled}
+              canSpeak={speech.hasKoreanVoice && settings.soundEnabled}
               onSelect={handleSelect}
-              onSpeak={handleSpeak}
+              onSpeakPrompt={handleSpeakPrompt}
             />
           ) : (
             <section className="rounded-3xl border border-slate-200 bg-white p-6 text-center dark:border-slate-800 dark:bg-slate-900">
@@ -337,7 +358,7 @@ export default function App() {
             chartLocked={testMode}
             reviewMode={reviewMode}
             soundEnabled={settings.soundEnabled}
-            speechSupported={speechSupported}
+            speechSupported={speech.hasKoreanVoice}
             onToggleChart={toggleChart}
             onRestartSession={handleRestartSession}
             onToggleReview={toggleReviewMode}

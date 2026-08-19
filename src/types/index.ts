@@ -3,8 +3,20 @@ export type HangulCategory =
 
 export type HangulCharacter = {
   id: string;
+  /** The compatibility jamo (U+3131–U+3163). For display only — never for speech. */
   character: string;
+  /** Revised Romanization. The primary label, and unique across all 40 letters. */
   romaja: string;
+  /**
+   * A real Hangul syllable that demonstrates the letter's sound, e.g. 'ㄱ' → '가'.
+   * Speech synthesis reads a bare jamo as the letter's *name* ("기역") or skips it
+   * entirely, so every spoken form in the app goes through this field instead.
+   */
+  demoSyllable: string;
+  /** Romanization at the start of a syllable. `null` means silent (ㅇ). Vowels omit it. */
+  initialRomaja?: string | null;
+  /** Romanization as a final consonant (batchim). `null` means it cannot be one. */
+  finalRomaja?: string | null;
   category: HangulCategory;
   explanation?: string;
   confusableIds?: string[];

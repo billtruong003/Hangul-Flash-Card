@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORY_LABELS, CATEGORY_ORDER, HANGUL_CHARACTERS } from '../data/hangul';
 import { isMastered } from '../lib/progress';
+import { SLOW_RATE } from '../lib/speech';
 import type { HangulCharacter, ProgressMap } from '../types';
 import { CheckIcon, SpeakerIcon } from './icons';
 
@@ -14,11 +15,18 @@ type HangulChartProps = {
   canSpeak: boolean;
   /** Any interaction with the chart counts as consulting it. */
   onConsult: () => void;
-  onSpeak: (text: string) => void;
+  /** Takes a spoken form — always a real syllable, never a bare jamo. */
+  onSpeak: (text: string, options?: { rate?: number }) => void;
 };
 
-function cellLabel(character: HangulCharacter, mastered: boolean, highlighted: boolean): string {
+function cellLabel(
+  character: HangulCharacter,
+  mastered: boolean,
+  highlighted: boolean,
+  canSpeak: boolean,
+): string {
   const parts = [`${character.character}, đọc là ${character.romaja}`];
+  if (canSpeak) parts.push('chạm để nghe');
   if (mastered) parts.push('đã thuộc');
   if (highlighted) parts.push('đang được hỏi');
   return parts.join(', ');
@@ -37,7 +45,7 @@ export function HangulChart({
   const select = (character: HangulCharacter) => {
     onConsult();
     setSelectedId(character.id);
-    onSpeak(character.character);
+    onSpeak(character.demoSyllable);
   };
 
   return (
@@ -62,7 +70,7 @@ export function HangulChart({
                       onClick={() => select(character)}
                       onFocus={onConsult}
                       aria-pressed={isSelected}
-                      aria-label={cellLabel(character, mastered, highlighted)}
+                      aria-label={cellLabel(character, mastered, highlighted, canSpeak)}
                       className={[
                         'relative flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg border px-0.5 py-1 transition-colors',
                         isSelected
@@ -74,6 +82,15 @@ export function HangulChart({
                     >
                       {mastered && (
                         <CheckIcon className="absolute top-0.5 right-0.5 h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                      )}
+                      {/* The whole cell is the tap target — a nested button
+                          would be invalid markup — so this is a hint, not a
+                          control. The accessible name carries it for others. */}
+                      {canSpeak && (
+                        <SpeakerIcon
+                          aria-hidden="true"
+                          className="absolute top-0.5 left-0.5 h-3 w-3 text-slate-400 dark:text-slate-500"
+                        />
                       )}
                       <span className="font-hangul text-xl leading-none font-medium" lang="ko">
                         {character.character}
@@ -100,21 +117,37 @@ export function HangulChart({
               {selected.character}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-sm font-semibold">
+              <p className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold">
                 {selected.romaja}
                 {canSpeak && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onConsult();
-                      onSpeak(selected.character);
-                    }}
-                    aria-label={`Nghe phát âm chữ ${selected.character}`}
-                    className="rounded-full p-1 text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400"
-                  >
-                    <SpeakerIcon className="h-4 w-4" />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onConsult();
+                        onSpeak(selected.demoSyllable);
+                      }}
+                      aria-label={`Nghe phát âm chữ ${selected.character}`}
+                      className="rounded-full p-1 text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400"
+                    >
+                      <SpeakerIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onConsult();
+                        onSpeak(selected.demoSyllable, { rate: SLOW_RATE });
+                      }}
+                      aria-label={`Nghe chậm chữ ${selected.character}`}
+                      className="rounded-full border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 transition-colors hover:border-sky-400 hover:text-sky-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-sky-500 dark:hover:text-sky-400"
+                    >
+                      Chậm
+                    </button>
+                  </>
                 )}
+                <span className="font-hangul text-xs font-normal text-slate-400 dark:text-slate-500">
+                  {selected.demoSyllable}
+                </span>
               </p>
               {selected.explanation && (
                 <p className="mt-0.5 text-xs leading-snug text-slate-600 dark:text-slate-300">

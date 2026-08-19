@@ -26,7 +26,7 @@ export function promptCharacter() {
 
   // The reverse tab shows a romaja, so the asked character is whichever
   // option carries it — answer generation guarantees only one option can match.
-  const romaja = document.querySelector('#quiz-panel [lang="vi"]')?.textContent ?? '';
+  const romaja = document.querySelector('#quiz-panel [lang="ko-Latn"]')?.textContent ?? '';
   const asked = answerButtons()
     .map((button) => (button.getAttribute('aria-label') ?? '').replace(/^Đáp án \d+: chữ /, ''))
     .map(findByGlyph)
