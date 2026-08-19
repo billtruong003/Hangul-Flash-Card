@@ -4,7 +4,7 @@ export type HangulCategory =
 export type HangulCharacter = {
   id: string;
   character: string;
-  pronunciation: string;
+  romaja: string;
   category: HangulCategory;
   explanation?: string;
   confusableIds?: string[];
@@ -37,7 +37,7 @@ export type PersistedState = {
   bestStreak: number;
 };
 
-/** `char-to-sound` shows the Hangul glyph; `sound-to-char` shows the pronunciation. */
+/** `char-to-sound` shows the Hangul glyph; `sound-to-char` shows the romaja. */
 export type QuizMode = 'char-to-sound' | 'sound-to-char';
 
 export type Question = {

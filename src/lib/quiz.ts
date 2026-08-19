@@ -91,15 +91,15 @@ export function buildAnswerOptions(
 ): HangulCharacter[] {
   const chosen: HangulCharacter[] = [correct];
   const usedIds = new Set([correct.id]);
-  const usedLabels = new Set([correct.pronunciation]);
+  const usedLabels = new Set([correct.romaja]);
 
   const take = (candidate: HangulCharacter, allowDuplicateLabel = false): void => {
     if (chosen.length >= optionCount) return;
     if (usedIds.has(candidate.id)) return;
-    if (!allowDuplicateLabel && usedLabels.has(candidate.pronunciation)) return;
+    if (!allowDuplicateLabel && usedLabels.has(candidate.romaja)) return;
     chosen.push(candidate);
     usedIds.add(candidate.id);
-    usedLabels.add(candidate.pronunciation);
+    usedLabels.add(candidate.romaja);
   };
 
   const byId = new Map(pool.map((character) => [character.id, character]));

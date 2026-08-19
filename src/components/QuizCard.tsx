@@ -43,7 +43,7 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
   const { prompt, options } = question;
   const showsHangulPrompt = mode === 'char-to-sound';
   const feedbackMessage = feedback
-    ? `${RESULT_HEADLINES[feedback.result]}. ${prompt.character} đọc là ${prompt.pronunciation}.`
+    ? `${RESULT_HEADLINES[feedback.result]}. ${prompt.character} đọc là ${prompt.romaja}.`
     : '';
 
   return (
@@ -68,7 +68,7 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
                 : 'animate-pop-in text-5xl leading-tight font-bold sm:text-6xl'
             }
           >
-            {showsHangulPrompt ? prompt.character : prompt.pronunciation}
+            {showsHangulPrompt ? prompt.character : prompt.romaja}
           </p>
 
           {showsHangulPrompt && canSpeak && (
@@ -88,10 +88,10 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
         {options.map((option, index) => (
           <AnswerButton
             key={option.id}
-            label={showsHangulPrompt ? option.pronunciation : option.character}
+            label={showsHangulPrompt ? option.romaja : option.character}
             ariaLabel={
               showsHangulPrompt
-                ? `Đáp án ${index + 1}: đọc là ${option.pronunciation}`
+                ? `Đáp án ${index + 1}: đọc là ${option.romaja}`
                 : `Đáp án ${index + 1}: chữ ${option.character}`
             }
             isHangul={!showsHangulPrompt}
@@ -115,7 +115,7 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
               <ResultIcon result={feedback.result} />
               <span>{RESULT_HEADLINES[feedback.result]}</span>
               <span className="font-normal text-slate-600 dark:text-slate-300">
-                — <span className="font-hangul">{prompt.character}</span> = {prompt.pronunciation}
+                — <span className="font-hangul">{prompt.character}</span> = {prompt.romaja}
               </span>
               {!showsHangulPrompt && canSpeak && (
                 <button

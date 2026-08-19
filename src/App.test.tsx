@@ -69,7 +69,7 @@ describe('App', () => {
     expect(statValue('Sai')).toBe('1');
     expect(statValue('Chuỗi hiện tại')).toBe('0');
     expect(statValue('Chuỗi cao nhất')).toBe('1');
-    expect(within(correct).getByText(promptCharacter().pronunciation)).toBeInTheDocument();
+    expect(within(correct).getByText(promptCharacter().romaja)).toBeInTheDocument();
 
     act(() => void vi.advanceTimersByTime(INCORRECT_DELAY_MS + 50));
     expect(screen.queryByText('Chưa đúng')).not.toBeInTheDocument();

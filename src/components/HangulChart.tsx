@@ -18,7 +18,7 @@ type HangulChartProps = {
 };
 
 function cellLabel(character: HangulCharacter, mastered: boolean, highlighted: boolean): string {
-  const parts = [`${character.character}, đọc là ${character.pronunciation}`];
+  const parts = [`${character.character}, đọc là ${character.romaja}`];
   if (mastered) parts.push('đã thuộc');
   if (highlighted) parts.push('đang được hỏi');
   return parts.join(', ');
@@ -79,7 +79,7 @@ export function HangulChart({
                         {character.character}
                       </span>
                       <span className="mt-0.5 w-full truncate text-center text-[10px] leading-tight text-slate-500 dark:text-slate-400">
-                        {character.pronunciation}
+                        {character.romaja}
                       </span>
                     </button>
                   );
@@ -101,7 +101,7 @@ export function HangulChart({
             </span>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-sm font-semibold">
-                {selected.pronunciation}
+                {selected.romaja}
                 {canSpeak && (
                   <button
                     type="button"

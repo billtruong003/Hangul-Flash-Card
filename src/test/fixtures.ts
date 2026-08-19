@@ -62,7 +62,7 @@ export function makeCharacter(
   return {
     id,
     character: id.toUpperCase(),
-    pronunciation: id,
+    romaja: id,
     category: 'basic-consonant',
     ...overrides,
   };

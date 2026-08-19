@@ -47,7 +47,7 @@ describe('HangulChart', () => {
     expect(onConsult).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the pronunciation and explanation of the selected character', () => {
+  it('shows the romaja and explanation of the selected character', () => {
     renderChart();
     expect(screen.queryByText(/Đứng đầu âm tiết/)).not.toBeInTheDocument();
 

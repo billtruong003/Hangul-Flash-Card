@@ -8,7 +8,7 @@ export function answerButtons(): HTMLElement[] {
   return screen.queryAllByRole('button', { name: /^Đáp án/ });
 }
 
-/** True on the "Âm → Chữ" tab, where the prompt is a pronunciation, not a glyph. */
+/** True on the "Âm → Chữ" tab, where the prompt is a romaja, not a glyph. */
 function isReverseTab(): boolean {
   return document.querySelector('#quiz-panel [lang="ko"]') === null;
 }
@@ -24,21 +24,21 @@ export function promptCharacter() {
     return findByGlyph(document.querySelector('#quiz-panel [lang="ko"]')?.textContent ?? '');
   }
 
-  // The reverse tab shows a pronunciation, so the asked character is whichever
+  // The reverse tab shows a romaja, so the asked character is whichever
   // option carries it — answer generation guarantees only one option can match.
-  const pronunciation = document.querySelector('#quiz-panel [lang="vi"]')?.textContent ?? '';
+  const romaja = document.querySelector('#quiz-panel [lang="vi"]')?.textContent ?? '';
   const asked = answerButtons()
     .map((button) => (button.getAttribute('aria-label') ?? '').replace(/^Đáp án \d+: chữ /, ''))
     .map(findByGlyph)
-    .find((character) => character.pronunciation === pronunciation);
+    .find((character) => character.romaja === romaja);
 
-  if (!asked) throw new Error(`Không nhận ra âm đang hiển thị: "${pronunciation}"`);
+  if (!asked) throw new Error(`Không nhận ra âm đang hiển thị: "${romaja}"`);
   return asked;
 }
 
 export function buttonsSplitByCorrectness() {
   const asked = promptCharacter();
-  const suffix = isReverseTab() ? `chữ ${asked.character}` : `đọc là ${asked.pronunciation}`;
+  const suffix = isReverseTab() ? `chữ ${asked.character}` : `đọc là ${asked.romaja}`;
   const buttons = answerButtons();
   const correct = buttons.find((button) => button.getAttribute('aria-label')?.endsWith(suffix));
   if (!correct) throw new Error('Không tìm thấy đáp án đúng trong danh sách lựa chọn');

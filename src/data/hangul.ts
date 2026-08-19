@@ -21,7 +21,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-g',
     character: 'ㄱ',
-    pronunciation: 'g/k',
+    romaja: 'g/k',
     category: 'basic-consonant',
     explanation: 'Đầu âm tiết đọc gần "g", cuối âm tiết đọc thành "k" không bật hơi.',
     confusableIds: ['c-k', 't-kk', 'c-n'],
@@ -29,7 +29,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-n',
     character: 'ㄴ',
-    pronunciation: 'n',
+    romaja: 'n',
     category: 'basic-consonant',
     explanation: 'Giống "n" trong tiếng Việt, lưỡi chạm lợi trên.',
     confusableIds: ['c-d', 'c-r', 'c-m'],
@@ -37,7 +37,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-d',
     character: 'ㄷ',
-    pronunciation: 'd/t',
+    romaja: 'd/t',
     category: 'basic-consonant',
     explanation: 'Đầu âm tiết gần "đ", cuối âm tiết đọc thành "t".',
     confusableIds: ['c-n', 'c-t', 't-tt'],
@@ -45,7 +45,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-r',
     character: 'ㄹ',
-    pronunciation: 'r/l',
+    romaja: 'r/l',
     category: 'basic-consonant',
     explanation: 'Đầu âm tiết gần "r" rung nhẹ, cuối âm tiết đọc thành "l".',
     confusableIds: ['c-d', 'c-n', 'c-t'],
@@ -53,7 +53,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-m',
     character: 'ㅁ',
-    pronunciation: 'm',
+    romaja: 'm',
     category: 'basic-consonant',
     explanation: 'Giống "m" trong tiếng Việt, hai môi khép lại.',
     confusableIds: ['c-b', 'c-ng', 'c-p'],
@@ -61,7 +61,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-b',
     character: 'ㅂ',
-    pronunciation: 'b/p',
+    romaja: 'b/p',
     category: 'basic-consonant',
     explanation: 'Đầu âm tiết gần "b", cuối âm tiết đọc thành "p".',
     confusableIds: ['c-m', 'c-p', 't-pp'],
@@ -69,7 +69,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-s',
     character: 'ㅅ',
-    pronunciation: 's',
+    romaja: 's',
     category: 'basic-consonant',
     explanation: 'Gần "x" tiếng Việt; đứng trước ㅣ nghe như "sh".',
     confusableIds: ['c-j', 'c-ch', 't-ss'],
@@ -77,7 +77,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-ng',
     character: 'ㅇ',
-    pronunciation: 'câm/ng',
+    romaja: 'câm/ng',
     category: 'basic-consonant',
     explanation: 'Đứng đầu âm tiết: không phát âm. Đứng cuối âm tiết: đọc là "ng".',
     confusableIds: ['c-m', 'c-h', 'c-b'],
@@ -85,7 +85,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-j',
     character: 'ㅈ',
-    pronunciation: 'j/ch',
+    romaja: 'j/ch',
     category: 'basic-consonant',
     explanation: 'Gần "ch" nhẹ, không bật hơi.',
     confusableIds: ['c-s', 'c-ch', 't-jj'],
@@ -93,7 +93,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-ch',
     character: 'ㅊ',
-    pronunciation: 'ch bật hơi',
+    romaja: 'ch bật hơi',
     category: 'basic-consonant',
     explanation: 'Như ㅈ nhưng bật hơi mạnh ra ngoài.',
     confusableIds: ['c-j', 'c-s', 'c-h'],
@@ -101,7 +101,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-k',
     character: 'ㅋ',
-    pronunciation: 'k bật hơi',
+    romaja: 'k bật hơi',
     category: 'basic-consonant',
     explanation: 'Như ㄱ nhưng bật hơi mạnh ra ngoài.',
     confusableIds: ['c-g', 't-kk', 'c-t'],
@@ -109,7 +109,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-t',
     character: 'ㅌ',
-    pronunciation: 't bật hơi',
+    romaja: 't bật hơi',
     category: 'basic-consonant',
     explanation: 'Như ㄷ nhưng bật hơi mạnh ra ngoài.',
     confusableIds: ['c-d', 't-tt', 'c-r'],
@@ -117,7 +117,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-p',
     character: 'ㅍ',
-    pronunciation: 'p bật hơi',
+    romaja: 'p bật hơi',
     category: 'basic-consonant',
     explanation: 'Như ㅂ nhưng bật hơi mạnh ra ngoài.',
     confusableIds: ['c-b', 't-pp', 'c-m'],
@@ -125,7 +125,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'c-h',
     character: 'ㅎ',
-    pronunciation: 'h',
+    romaja: 'h',
     category: 'basic-consonant',
     explanation: 'Giống "h" tiếng Việt, cuối âm tiết thường bị lược đi.',
     confusableIds: ['c-ng', 'c-ch', 'c-s'],
@@ -135,7 +135,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 't-kk',
     character: 'ㄲ',
-    pronunciation: 'k căng',
+    romaja: 'k căng',
     category: 'tense-consonant',
     explanation: 'Căng cổ họng, phát âm dứt khoát, không bật hơi.',
     confusableIds: ['c-g', 'c-k', 't-tt'],
@@ -143,7 +143,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 't-tt',
     character: 'ㄸ',
-    pronunciation: 't căng',
+    romaja: 't căng',
     category: 'tense-consonant',
     explanation: 'Căng cổ họng, phát âm dứt khoát, không bật hơi.',
     confusableIds: ['c-d', 'c-t', 't-kk'],
@@ -151,7 +151,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 't-pp',
     character: 'ㅃ',
-    pronunciation: 'p căng',
+    romaja: 'p căng',
     category: 'tense-consonant',
     explanation: 'Căng cổ họng, hai môi khép chặt rồi bật ra dứt khoát.',
     confusableIds: ['c-b', 'c-p', 't-tt'],
@@ -159,7 +159,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 't-ss',
     character: 'ㅆ',
-    pronunciation: 's căng',
+    romaja: 's căng',
     category: 'tense-consonant',
     explanation: 'Như ㅅ nhưng căng và mạnh hơn.',
     confusableIds: ['c-s', 't-jj', 't-kk'],
@@ -167,7 +167,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 't-jj',
     character: 'ㅉ',
-    pronunciation: 'ch/j căng',
+    romaja: 'ch/j căng',
     category: 'tense-consonant',
     explanation: 'Như ㅈ nhưng căng và dứt khoát hơn.',
     confusableIds: ['c-j', 'c-ch', 't-ss'],
@@ -177,7 +177,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-a',
     character: 'ㅏ',
-    pronunciation: 'a',
+    romaja: 'a',
     category: 'basic-vowel',
     explanation: 'Miệng mở rộng, giống "a" tiếng Việt.',
     confusableIds: ['v-ya', 'v-eo', 'v-i'],
@@ -185,7 +185,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-eo',
     character: 'ㅓ',
-    pronunciation: 'ơ',
+    romaja: 'ơ',
     category: 'basic-vowel',
     explanation: 'Miệng mở vừa, giống "ơ" tiếng Việt.',
     confusableIds: ['v-yeo', 'v-a', 'v-o'],
@@ -193,7 +193,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-o',
     character: 'ㅗ',
-    pronunciation: 'ô',
+    romaja: 'ô',
     category: 'basic-vowel',
     explanation: 'Môi tròn, giống "ô" tiếng Việt.',
     confusableIds: ['v-yo', 'v-u', 'v-eo'],
@@ -201,7 +201,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-u',
     character: 'ㅜ',
-    pronunciation: 'u',
+    romaja: 'u',
     category: 'basic-vowel',
     explanation: 'Môi tròn và chụm hơn ㅗ, giống "u" tiếng Việt.',
     confusableIds: ['v-yu', 'v-o', 'v-eu'],
@@ -209,7 +209,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-eu',
     character: 'ㅡ',
-    pronunciation: 'ư',
+    romaja: 'ư',
     category: 'basic-vowel',
     explanation: 'Môi dẹt kéo ngang, giống "ư" tiếng Việt.',
     confusableIds: ['v-i', 'v-u', 'v-o'],
@@ -217,7 +217,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-i',
     character: 'ㅣ',
-    pronunciation: 'i',
+    romaja: 'i',
     category: 'basic-vowel',
     explanation: 'Môi dẹt, giống "i" tiếng Việt.',
     confusableIds: ['v-a', 'v-eu', 'v-eo'],
@@ -225,7 +225,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-ya',
     character: 'ㅑ',
-    pronunciation: 'ya',
+    romaja: 'ya',
     category: 'basic-vowel',
     explanation: 'Thêm một nét là thành âm đôi: ㅏ → ㅑ.',
     confusableIds: ['v-a', 'v-yeo', 'v-yo'],
@@ -233,7 +233,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-yeo',
     character: 'ㅕ',
-    pronunciation: 'yơ',
+    romaja: 'yơ',
     category: 'basic-vowel',
     explanation: 'Thêm một nét là thành âm đôi: ㅓ → ㅕ.',
     confusableIds: ['v-eo', 'v-ya', 'v-yu'],
@@ -241,7 +241,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-yo',
     character: 'ㅛ',
-    pronunciation: 'yô',
+    romaja: 'yô',
     category: 'basic-vowel',
     explanation: 'Thêm một nét là thành âm đôi: ㅗ → ㅛ.',
     confusableIds: ['v-o', 'v-yu', 'v-ya'],
@@ -249,7 +249,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-yu',
     character: 'ㅠ',
-    pronunciation: 'yu',
+    romaja: 'yu',
     category: 'basic-vowel',
     explanation: 'Thêm một nét là thành âm đôi: ㅜ → ㅠ.',
     confusableIds: ['v-u', 'v-yo', 'v-yeo'],
@@ -259,7 +259,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-ae',
     character: 'ㅐ',
-    pronunciation: 'e',
+    romaja: 'e',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅏ + ㅣ. Miệng mở rộng hơn ㅔ một chút.',
     confusableIds: ['v-e', 'v-yae', 'v-a'],
@@ -267,7 +267,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-e',
     character: 'ㅔ',
-    pronunciation: 'ê/e',
+    romaja: 'ê/e',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅓ + ㅣ. Người Hàn hiện nay đọc gần như ㅐ.',
     confusableIds: ['v-ae', 'v-ye', 'v-eo'],
@@ -275,7 +275,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-yae',
     character: 'ㅒ',
-    pronunciation: 'ye',
+    romaja: 'ye',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅑ + ㅣ.',
     confusableIds: ['v-ye', 'v-ae', 'v-ya'],
@@ -283,7 +283,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-ye',
     character: 'ㅖ',
-    pronunciation: 'yê',
+    romaja: 'yê',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅕ + ㅣ.',
     confusableIds: ['v-yae', 'v-e', 'v-yeo'],
@@ -291,7 +291,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-wa',
     character: 'ㅘ',
-    pronunciation: 'wa',
+    romaja: 'wa',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅗ + ㅏ.',
     confusableIds: ['v-wo', 'v-wae', 'v-o'],
@@ -299,7 +299,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-wae',
     character: 'ㅙ',
-    pronunciation: 'we',
+    romaja: 'we',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅗ + ㅐ. Đọc gần như ㅞ và ㅚ.',
     confusableIds: ['v-oe', 'v-wa', 'v-we'],
@@ -307,7 +307,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-oe',
     character: 'ㅚ',
-    pronunciation: 'wê',
+    romaja: 'wê',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅗ + ㅣ.',
     confusableIds: ['v-wae', 'v-we', 'v-o'],
@@ -315,7 +315,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-wo',
     character: 'ㅝ',
-    pronunciation: 'wo',
+    romaja: 'wo',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅜ + ㅓ.',
     confusableIds: ['v-wa', 'v-we', 'v-u'],
@@ -323,7 +323,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-we',
     character: 'ㅞ',
-    pronunciation: 'we',
+    romaja: 'we',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅜ + ㅔ. Đọc gần như ㅙ và ㅚ.',
     confusableIds: ['v-wae', 'v-wo', 'v-oe'],
@@ -331,7 +331,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-wi',
     character: 'ㅟ',
-    pronunciation: 'wi',
+    romaja: 'wi',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅜ + ㅣ.',
     confusableIds: ['v-oe', 'v-u', 'v-ui'],
@@ -339,7 +339,7 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   {
     id: 'v-ui',
     character: 'ㅢ',
-    pronunciation: 'ưi',
+    romaja: 'ưi',
     category: 'compound-vowel',
     explanation: 'Ghép từ ㅡ + ㅣ. Trong tiểu từ sở hữu 의 đọc là "ê".',
     confusableIds: ['v-eu', 'v-i', 'v-wi'],
