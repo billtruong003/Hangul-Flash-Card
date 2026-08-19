@@ -1,5 +1,11 @@
 import { track } from '@vercel/analytics';
-import type { AnswerResult, HangulCategory, QuizMode } from '../types';
+import type {
+  AnswerResult,
+  HangulCategory,
+  LearningSection,
+  QuizMode,
+  SentenceLevel,
+} from '../types';
 
 /**
  * The only place that knows Vercel Analytics exists. Everything else in the app
@@ -19,7 +25,11 @@ export type AnalyticsEventName =
   | 'test_mode_started'
   | 'learning_session_started'
   | 'learning_session_completed'
-  | 'learning_categories_changed';
+  | 'learning_categories_changed'
+  | 'section_changed'
+  | 'stroke_attempt'
+  | 'syllable_built'
+  | 'listening_answer';
 
 export type AnalyticsProperties = Record<string, string | number | boolean>;
 
@@ -155,4 +165,33 @@ export function trackSessionCompleted(totals: {
 
 export function trackCategoryChanged(enabledCount: number): void {
   emit('learning_categories_changed', { enabledCount });
+}
+
+/**
+ * Deliberately its own event rather than a property on `quiz_answer`. Widening
+ * that payload would make every answer carry which surface it came from, when
+ * `quiz_answer` only ever fires from one of them.
+ */
+export function trackSectionChanged(section: LearningSection): void {
+  emit('section_changed', { section });
+}
+
+export function trackStrokeAttempt(payload: { category: HangulCategory; clean: boolean }): void {
+  emit('stroke_attempt', { category: payload.category, clean: payload.clean });
+}
+
+export function trackSyllableBuilt(payload: { hasBatchim: boolean; correct: boolean }): void {
+  emit('syllable_built', { hasBatchim: payload.hasBatchim, correct: payload.correct });
+}
+
+export function trackListeningAnswer(payload: {
+  level: SentenceLevel;
+  correct: boolean;
+  replayed: boolean;
+}): void {
+  emit('listening_answer', {
+    level: payload.level,
+    correct: payload.correct,
+    replayed: payload.replayed,
+  });
 }

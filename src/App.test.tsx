@@ -7,10 +7,12 @@ import {
   answerButtons,
   buttonsSplitByCorrectness,
   chartToggle,
+  gotoSection,
   openChart,
   promptCharacter,
   readStoredState,
   seedNearlyMasteredConsonants,
+  seedState,
   statValue,
   stubDesktopViewport,
 } from './test/appHarness';
@@ -493,5 +495,74 @@ describe('Chế độ kiểm tra', () => {
     fireEvent.click(buttonsSplitByCorrectness().correct);
     expect(screen.getByText('Chính xác')).toBeInTheDocument();
     expect(statValue('Đúng')).toBe('1');
+  });
+});
+
+describe('điều hướng giữa các khu vực', () => {
+  it('offers the four learning surfaces as navigation, not as a second tablist', () => {
+    render(<App />);
+
+    const nav = screen.getByRole('navigation', { name: 'Khu vực học' });
+    for (const label of ['Học chữ', 'Viết', 'Ghép chữ', 'Nghe']) {
+      expect(within(nav).getByRole('button', { name: label })).toBeInTheDocument();
+    }
+
+    // The only tablist on the page is the pair of quiz directions. Making the
+    // section switcher a tablist too would give ← / → two meanings at once.
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(within(nav).getByRole('button', { name: 'Học chữ' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('swaps the surface and remembers where the learner was', () => {
+    render(<App />);
+    expect(answerButtons()).toHaveLength(4);
+
+    gotoSection('Nghe');
+
+    expect(answerButtons()).toHaveLength(0);
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(readStoredState().ui.section).toBe('listening');
+  });
+
+  it('reopens on the surface the learner left off at', () => {
+    seedState({ ui: { section: 'syllables' } });
+    render(<App />);
+
+    expect(
+      within(screen.getByRole('navigation', { name: 'Khu vực học' })).getByRole('button', {
+        name: 'Ghép chữ',
+      }),
+    ).toHaveAttribute('aria-current', 'page');
+    expect(answerButtons()).toHaveLength(0);
+  });
+
+  it('keeps the reference chart reachable from every surface', () => {
+    render(<App />);
+    gotoSection('Viết');
+
+    fireEvent.click(chartToggle());
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('moves between surfaces with shift and the arrow keys', () => {
+    render(<App />);
+
+    fireEvent.keyDown(window, { key: 'ArrowRight', shiftKey: true });
+    expect(readStoredState().ui.section).toBe('writing');
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft', shiftKey: true });
+    expect(readStoredState().ui.section).toBe('letters');
+  });
+
+  it('leaves an unmodified arrow key to the surface on screen', () => {
+    render(<App />);
+
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+    expect(screen.getByRole('tab', { name: 'Âm → Chữ' })).toHaveAttribute('aria-selected', 'true');
+    expect(readStoredState().ui.section).toBe('letters');
   });
 });

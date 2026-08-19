@@ -4,8 +4,23 @@ import { HANGUL_CHARACTERS } from '../data/hangul';
 import { STORAGE_KEY, createDefaultState } from '../lib/storage';
 import type { CharacterProgress, PersistedState } from '../types';
 
+/**
+ * Scoped to the quiz panel on purpose. The listening surface also renders four
+ * choices, so a document-wide query would start matching two sets at once the
+ * moment a test visits that section.
+ */
 export function answerButtons(): HTMLElement[] {
-  return screen.queryAllByRole('button', { name: /^Đáp án/ });
+  const panel = document.querySelector('#quiz-panel');
+  if (!panel) return [];
+  return within(panel as HTMLElement).queryAllByRole('button', { name: /^Đáp án/ });
+}
+
+export function gotoSection(label: string): void {
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Khu vực học' })).getByRole('button', {
+      name: label,
+    }),
+  );
 }
 
 /** True on the "Âm → Chữ" tab, where the prompt is a romaja, not a glyph. */

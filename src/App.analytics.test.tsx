@@ -12,6 +12,7 @@ import {
   readStoredState,
   seedConsonantProgress,
   seedNearlyMasteredConsonants,
+  gotoSection,
 } from './test/appHarness';
 import {
   breakAnalytics,
@@ -355,5 +356,43 @@ describe('analytics failures', () => {
       fireEvent.click(screen.getByRole('checkbox', { name: /Phụ âm căng/ })),
     ).not.toThrow();
     expect(readStoredState().settings.enabledCategories).toHaveLength(3);
+  });
+});
+
+describe('section_changed', () => {
+  it('fires once per move, with the surface that was opened', () => {
+    render(<App />);
+
+    gotoSection('Nghe');
+    gotoSection('Viết');
+
+    expect(eventsNamed(events, 'section_changed').map((event) => event.properties)).toEqual([
+      { section: 'listening' },
+      { section: 'writing' },
+    ]);
+  });
+
+  it('stays quiet when the learner taps the surface they are already on', () => {
+    render(<App />);
+
+    gotoSection('Học chữ');
+
+    expect(eventNames(events)).not.toContain('section_changed');
+  });
+
+  it('does not add the surface to quiz_answer', () => {
+    // quiz_answer only ever fires from the letters surface, so widening its
+    // payload would carry a constant on every single answer.
+    render(<App />);
+    answerCorrectly();
+
+    const [answer] = eventsNamed(events, 'quiz_answer');
+    expect(Object.keys(answer.properties ?? {}).sort()).toEqual([
+      'category',
+      'direction',
+      'result',
+      'reviewMode',
+      'testMode',
+    ]);
   });
 });
