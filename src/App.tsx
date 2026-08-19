@@ -19,6 +19,7 @@ import { trackCategoryChanged, trackChartOpened, trackTestModeStarted } from './
 import { primeSpeechOnGesture, speak, type SpeakOptions } from './lib/speech';
 import { LettersSection } from './sections/LettersSection';
 import { PlaceholderSection } from './sections/PlaceholderSection';
+import { WritingSection } from './sections/WritingSection';
 import type { HangulCategory, LearningSection } from './types';
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
@@ -152,10 +153,7 @@ export default function App() {
       />
     ),
     writing: (
-      <PlaceholderSection
-        title="Viết tay"
-        description="Phần luyện viết theo thứ tự nét đang được xây dựng."
-      />
+      <WritingSection state={state} setState={setState} canSpeak={canSpeak} onSpeak={handleSpeak} />
     ),
     syllables: (
       <PlaceholderSection
