@@ -1,6 +1,7 @@
 import type { Feedback } from '../hooks/useQuiz';
 import type { AnswerResult, Question, QuizMode } from '../types';
-import { AnswerButton, type AnswerState } from './AnswerButton';
+import { AnswerButton } from './AnswerButton';
+import { answerStateFor } from './answerState';
 import { AssistIcon, CheckIcon, CrossIcon, SpeakerIcon } from './icons';
 
 type QuizCardProps = {
@@ -9,7 +10,11 @@ type QuizCardProps = {
   mode: QuizMode;
   canSpeak: boolean;
   onSelect: (optionId: string) => void;
-  onSpeak: (text: string) => void;
+  /**
+   * Reads the asked letter aloud. The caller owns whether that counts as
+   * assistance — on the "Chữ → Âm" tab hearing the letter *is* the answer.
+   */
+  onSpeakPrompt: () => void;
 };
 
 const RESULT_HEADLINES: Record<AnswerResult, string> = {
@@ -30,20 +35,18 @@ function ResultIcon({ result }: { result: AnswerResult }) {
   return <CrossIcon className="h-4 w-4" />;
 }
 
-function answerStateFor(optionId: string, feedback: Feedback | null): AnswerState {
-  if (!feedback) return 'idle';
-  if (optionId === feedback.correctId) {
-    return feedback.result === 'correct-assisted' ? 'assisted' : 'correct';
-  }
-  if (optionId === feedback.selectedId) return 'incorrect';
-  return 'dimmed';
-}
-
-export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak }: QuizCardProps) {
+export function QuizCard({
+  question,
+  feedback,
+  mode,
+  canSpeak,
+  onSelect,
+  onSpeakPrompt,
+}: QuizCardProps) {
   const { prompt, options } = question;
   const showsHangulPrompt = mode === 'char-to-sound';
   const feedbackMessage = feedback
-    ? `${RESULT_HEADLINES[feedback.result]}. ${prompt.character} đọc là ${prompt.pronunciation}.`
+    ? `${RESULT_HEADLINES[feedback.result]}. ${prompt.character} đọc là ${prompt.romaja}.`
     : '';
 
   return (
@@ -61,21 +64,32 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
         <div className="mt-2 flex min-h-[5.5rem] items-center gap-3 sm:min-h-[7rem]">
           <p
             key={`${prompt.id}-${mode}`}
-            lang={showsHangulPrompt ? 'ko' : 'vi'}
+            // The reverse tab shows romanized Korean, not Vietnamese. Tagging it
+            // `vi` would have a screen reader apply Vietnamese phonology to it.
+            lang={showsHangulPrompt ? 'ko' : 'ko-Latn'}
             className={
               showsHangulPrompt
                 ? 'animate-pop-in font-hangul text-7xl leading-none font-medium sm:text-8xl'
                 : 'animate-pop-in text-5xl leading-tight font-bold sm:text-6xl'
             }
           >
-            {showsHangulPrompt ? prompt.character : prompt.pronunciation}
+            {showsHangulPrompt ? prompt.character : prompt.romaja}
           </p>
 
-          {showsHangulPrompt && canSpeak && (
+          {canSpeak && (
             <button
               type="button"
-              onClick={() => onSpeak(prompt.character)}
-              aria-label={`Nghe phát âm chữ ${prompt.character}`}
+              onClick={onSpeakPrompt}
+              aria-label={
+                showsHangulPrompt
+                  ? `Nghe phát âm chữ ${prompt.character} — tính là có trợ giúp`
+                  : `Nghe âm ${prompt.romaja}`
+              }
+              title={
+                showsHangulPrompt && !feedback
+                  ? 'Nghe trước khi trả lời sẽ tính là có trợ giúp'
+                  : undefined
+              }
               className="rounded-full border border-slate-200 p-2 text-slate-500 transition-colors hover:border-sky-400 hover:text-sky-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-sky-500 dark:hover:text-sky-400"
             >
               <SpeakerIcon />
@@ -88,14 +102,17 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
         {options.map((option, index) => (
           <AnswerButton
             key={option.id}
-            label={showsHangulPrompt ? option.pronunciation : option.character}
+            label={showsHangulPrompt ? option.romaja : option.character}
             ariaLabel={
               showsHangulPrompt
-                ? `Đáp án ${index + 1}: đọc là ${option.pronunciation}`
+                ? `Đáp án ${index + 1}: đọc là ${option.romaja}`
                 : `Đáp án ${index + 1}: chữ ${option.character}`
             }
             isHangul={!showsHangulPrompt}
-            state={answerStateFor(option.id, feedback)}
+            state={answerStateFor(
+              option.id,
+              feedback && { ...feedback, assisted: feedback.result === 'correct-assisted' },
+            )}
             disabled={feedback !== null}
             shortcut={index + 1}
             onSelect={() => onSelect(option.id)}
@@ -115,18 +132,8 @@ export function QuizCard({ question, feedback, mode, canSpeak, onSelect, onSpeak
               <ResultIcon result={feedback.result} />
               <span>{RESULT_HEADLINES[feedback.result]}</span>
               <span className="font-normal text-slate-600 dark:text-slate-300">
-                — <span className="font-hangul">{prompt.character}</span> = {prompt.pronunciation}
+                — <span className="font-hangul">{prompt.character}</span> = {prompt.romaja}
               </span>
-              {!showsHangulPrompt && canSpeak && (
-                <button
-                  type="button"
-                  onClick={() => onSpeak(prompt.character)}
-                  aria-label={`Nghe phát âm chữ ${prompt.character}`}
-                  className="ml-0.5 rounded-full p-1 text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400"
-                >
-                  <SpeakerIcon className="h-4 w-4" />
-                </button>
-              )}
             </p>
             {feedback.result === 'correct-assisted' && (
               <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">

@@ -1,10 +1,25 @@
 import { CATEGORY_ORDER, CHARACTERS_BY_ID, DEFAULT_ENABLED_CATEGORIES } from '../data/hangul';
-import type { AnswerResult, CharacterProgress, PersistedState, ProgressMap } from '../types';
+import { SECTION_IDS } from '../data/sections';
+import { SENTENCES_BY_ID } from '../data/sentences';
+import { SYLLABLES_BY_ID } from '../data/syllables';
+import type {
+  AnswerResult,
+  CharacterProgress,
+  LearningSection,
+  ListeningProgress,
+  PersistedState,
+  ProgressMap,
+  StrokeProgress,
+  SyllableProgress,
+} from '../types';
 
 export const STORAGE_KEY = 'hangul-flashcards';
 /** Where version 1 lived. Read once, then folded into STORAGE_KEY. */
 export const LEGACY_STORAGE_KEY = 'hangul-flashcards:v1';
-export const STORAGE_VERSION = 2;
+export const STORAGE_VERSION = 3;
+
+/** Every shape this module can read. Anything else is discarded wholesale. */
+const SUPPORTED_VERSIONS: unknown[] = [1, 2, STORAGE_VERSION];
 
 const ANSWER_RESULTS: AnswerResult[] = ['correct-unassisted', 'correct-assisted', 'incorrect'];
 
@@ -12,12 +27,16 @@ export function createDefaultState(): PersistedState {
   return {
     version: STORAGE_VERSION,
     progress: {},
+    strokes: {},
+    syllables: {},
+    listening: {},
     settings: {
       enabledCategories: [...DEFAULT_ENABLED_CATEGORIES],
       soundEnabled: false,
       testMode: false,
     },
     bestStreak: 0,
+    ui: { section: 'letters' },
   };
 }
 
@@ -80,18 +99,80 @@ function migrateCharacterProgressV1(value: unknown): CharacterProgress | null {
   };
 }
 
+/**
+ * One walker for every id-keyed progress map. Drops ids the app no longer
+ * recognises — which matters most for the sentence deck, since that content is
+ * expected to change between releases and stale entries should just disappear.
+ */
+function parseKeyedMap<T>(
+  value: unknown,
+  isKnownId: (id: string) => boolean,
+  parseEntry: (entry: unknown) => T | null,
+): Record<string, T> {
+  if (!isRecord(value)) return {};
+  const result: Record<string, T> = {};
+  for (const [id, entry] of Object.entries(value)) {
+    if (!isKnownId(id)) continue;
+    const parsed = parseEntry(entry);
+    if (parsed) result[id] = parsed;
+  }
+  return result;
+}
+
+const isCharacterId = (id: string) => Boolean(CHARACTERS_BY_ID[id]);
+const isSyllableId = (id: string) => Boolean(SYLLABLES_BY_ID[id]);
+const isSentenceId = (id: string) => Boolean(SENTENCES_BY_ID[id]);
+
 function parseProgress(
   value: unknown,
   parseEntry: (entry: unknown) => CharacterProgress | null,
 ): ProgressMap {
-  if (!isRecord(value)) return {};
-  const progress: ProgressMap = {};
-  for (const [characterId, entry] of Object.entries(value)) {
-    if (!CHARACTERS_BY_ID[characterId]) continue;
-    const parsed = parseEntry(entry);
-    if (parsed) progress[characterId] = parsed;
-  }
-  return progress;
+  return parseKeyedMap(value, isCharacterId, parseEntry);
+}
+
+/** Same "repair, never throw" contract as toCount, clamped to a 0–100 grade. */
+function toScore(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function parseStrokeProgress(value: unknown): StrokeProgress | null {
+  if (!isRecord(value)) return null;
+  return {
+    attemptCount: toCount(value.attemptCount),
+    cleanCount: toCount(value.cleanCount),
+    bestScore: toScore(value.bestScore),
+    lastScore: toScore(value.lastScore),
+    currentCleanStreak: toCount(value.currentCleanStreak),
+    lastPracticedAt: toTimestamp(value.lastPracticedAt),
+  };
+}
+
+function parseSyllableProgress(value: unknown): SyllableProgress | null {
+  if (!isRecord(value)) return null;
+  return {
+    builtCount: toCount(value.builtCount),
+    correctCount: toCount(value.correctCount),
+    incorrectCount: toCount(value.incorrectCount),
+    currentCorrectStreak: toCount(value.currentCorrectStreak),
+    lastBuiltAt: toTimestamp(value.lastBuiltAt),
+  };
+}
+
+function parseListeningProgress(value: unknown): ListeningProgress | null {
+  if (!isRecord(value)) return null;
+  return {
+    heardCount: toCount(value.heardCount),
+    correctCount: toCount(value.correctCount),
+    incorrectCount: toCount(value.incorrectCount),
+    replayCount: toCount(value.replayCount),
+    currentCorrectStreak: toCount(value.currentCorrectStreak),
+    lastHeardAt: toTimestamp(value.lastHeardAt),
+  };
+}
+
+function parseSection(value: unknown): LearningSection {
+  return SECTION_IDS.find((section) => section === value) ?? 'letters';
 }
 
 function parseEnabledCategories(value: unknown): string[] {
@@ -106,21 +187,32 @@ function parseEnabledCategories(value: unknown): string[] {
 /** Turns anything found in storage into a usable state, falling back per field. */
 export function parsePersistedState(raw: unknown): PersistedState {
   if (!isRecord(raw)) return createDefaultState();
-  if (raw.version !== 1 && raw.version !== STORAGE_VERSION) return createDefaultState();
+  if (!SUPPORTED_VERSIONS.includes(raw.version)) return createDefaultState();
 
   const settings = isRecord(raw.settings) ? raw.settings : {};
+  const ui = isRecord(raw.ui) ? raw.ui : {};
+
   return {
     version: STORAGE_VERSION,
+    // Version 1 is the only shape whose character entries need reworking;
+    // versions 2 and 3 store CharacterProgress identically, so one parser
+    // covers both and a v2 blob keeps its quiz history untouched.
     progress:
       raw.version === 1
         ? parseProgress(raw.progress, migrateCharacterProgressV1)
         : parseProgress(raw.progress, parseCharacterProgress),
+    // These three surfaces did not exist before version 3, which is why there
+    // is no migration for them — anything older simply starts empty.
+    strokes: parseKeyedMap(raw.strokes, isCharacterId, parseStrokeProgress),
+    syllables: parseKeyedMap(raw.syllables, isSyllableId, parseSyllableProgress),
+    listening: parseKeyedMap(raw.listening, isSentenceId, parseListeningProgress),
     settings: {
       enabledCategories: parseEnabledCategories(settings.enabledCategories),
       soundEnabled: settings.soundEnabled === true,
       testMode: settings.testMode === true,
     },
     bestStreak: toCount(raw.bestStreak),
+    ui: { section: parseSection(ui.section) },
   };
 }
 

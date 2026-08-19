@@ -24,16 +24,21 @@ describe('parsePersistedState', () => {
 
   it('defaults to basic consonants and vowels, sound off, test mode off', () => {
     const defaults = createDefaultState();
-    expect(defaults.version).toBe(2);
+    expect(defaults.version).toBe(3);
     expect(defaults.settings.enabledCategories).toEqual(DEFAULT_ENABLED_CATEGORIES);
     expect(defaults.settings.soundEnabled).toBe(false);
     expect(defaults.settings.testMode).toBe(false);
     expect(defaults.bestStreak).toBe(0);
+    expect(defaults.ui.section).toBe('letters');
+    expect(defaults.strokes).toEqual({});
+    expect(defaults.syllables).toEqual({});
+    expect(defaults.listening).toEqual({});
   });
 
-  it('keeps valid version 2 data intact', () => {
-    const state = {
-      version: 2,
+  it('accepts version 2 data untouched and starts the new surfaces empty', () => {
+    // The whole point of making v3 additive: someone mid-way through learning
+    // the alphabet must not lose that history to a feature they never used.
+    const v2 = {
       progress: {
         'c-g': {
           shownCount: 6,
@@ -52,7 +57,103 @@ describe('parsePersistedState', () => {
       },
       bestStreak: 12,
     };
+
+    const parsed = parsePersistedState({ version: 2, ...v2 });
+
+    expect(parsed).toMatchObject(v2);
+    expect(parsed.version).toBe(3);
+    expect(parsed.strokes).toEqual({});
+    expect(parsed.syllables).toEqual({});
+    expect(parsed.listening).toEqual({});
+    expect(parsed.ui.section).toBe('letters');
+  });
+
+  it('keeps valid version 3 data intact', () => {
+    const state = {
+      version: 3,
+      progress: {},
+      strokes: {
+        'c-g': {
+          attemptCount: 4,
+          cleanCount: 2,
+          bestScore: 91,
+          lastScore: 78,
+          currentCleanStreak: 1,
+          lastPracticedAt: 1700000000000,
+        },
+      },
+      syllables: {
+        감: {
+          builtCount: 3,
+          correctCount: 2,
+          incorrectCount: 1,
+          currentCorrectStreak: 2,
+          lastBuiltAt: 1700000000000,
+        },
+      },
+      listening: {
+        s001: {
+          heardCount: 5,
+          correctCount: 4,
+          incorrectCount: 1,
+          replayCount: 7,
+          currentCorrectStreak: 3,
+          lastHeardAt: 1700000000000,
+        },
+      },
+      settings: { enabledCategories: ['basic-vowel'], soundEnabled: true, testMode: false },
+      bestStreak: 8,
+      ui: { section: 'listening' },
+    };
     expect(parsePersistedState(state)).toEqual(state);
+  });
+
+  it('drops progress for letters, syllables and sentences it no longer ships', () => {
+    // The sentence deck in particular is expected to churn between releases.
+    const parsed = parsePersistedState({
+      version: 3,
+      strokes: { 'c-g': {}, 'not-a-letter': { attemptCount: 9 } },
+      syllables: { 감: {}, 뷁: { builtCount: 9 } },
+      listening: { s001: {}, 'retired-sentence': { heardCount: 9 } },
+    });
+
+    expect(Object.keys(parsed.strokes)).toEqual(['c-g']);
+    expect(Object.keys(parsed.syllables)).toEqual(['감']);
+    expect(Object.keys(parsed.listening)).toEqual(['s001']);
+  });
+
+  it('clamps a stroke score into 0–100 and repairs broken counters', () => {
+    const parsed = parsePersistedState({
+      version: 3,
+      strokes: {
+        'c-g': {
+          attemptCount: -2,
+          cleanCount: 'x',
+          bestScore: 5000,
+          lastScore: -40,
+          currentCleanStreak: 2.9,
+          lastPracticedAt: 'nope',
+        },
+      },
+    });
+
+    expect(parsed.strokes['c-g']).toEqual({
+      attemptCount: 0,
+      cleanCount: 0,
+      bestScore: 100,
+      lastScore: 0,
+      currentCleanStreak: 2,
+      lastPracticedAt: null,
+    });
+  });
+
+  it('falls back to the letters section when the stored one is nonsense', () => {
+    expect(parsePersistedState({ version: 3, ui: { section: 'wat' } }).ui.section).toBe('letters');
+    expect(parsePersistedState({ version: 3, ui: 'wat' }).ui.section).toBe('letters');
+    expect(parsePersistedState({ version: 3 }).ui.section).toBe('letters');
+    expect(parsePersistedState({ version: 3, ui: { section: 'writing' } }).ui.section).toBe(
+      'writing',
+    );
   });
 
   it('drops unknown character ids and repairs broken counters', () => {
@@ -135,7 +236,7 @@ describe('migration from version 1', () => {
   it('moves correctCount into unassistedCorrectCount and keeps the streak', () => {
     const parsed = parsePersistedState(v1State);
 
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect(parsed.progress['c-g']).toEqual({
       shownCount: 9,
       unassistedCorrectCount: 7,
@@ -172,7 +273,7 @@ describe('migration from version 1', () => {
 
     saveState(loaded);
     expect(window.localStorage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
-    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}').version).toBe(2);
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}').version).toBe(3);
   });
 
   it('prefers the current key when both exist', () => {

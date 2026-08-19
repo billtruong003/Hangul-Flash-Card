@@ -7,19 +7,17 @@ import { HangulChart } from './HangulChart';
 const noop = () => {};
 
 function renderChart(overrides: Partial<Parameters<typeof HangulChart>[0]> = {}) {
-  const onConsult = vi.fn();
   const onSpeak = vi.fn();
   render(
     <HangulChart
       progress={{}}
       highlightedId={null}
       canSpeak={false}
-      onConsult={onConsult}
       onSpeak={onSpeak}
       {...overrides}
     />,
   );
-  return { onConsult, onSpeak };
+  return { onSpeak };
 }
 
 function cell(name: RegExp | string) {
@@ -35,32 +33,32 @@ describe('HangulChart', () => {
     expect(screen.getAllByRole('button')).toHaveLength(40);
   });
 
-  it('reports a consult when a character is clicked', () => {
-    const { onConsult } = renderChart();
-    fireEvent.click(cell(/^ㄴ, đọc là n$/));
-    expect(onConsult).toHaveBeenCalled();
-  });
-
-  it('reports a consult when a character merely receives focus', () => {
-    const { onConsult } = renderChart();
-    cell(/^ㄴ, đọc là n$/).focus();
-    expect(onConsult).toHaveBeenCalledTimes(1);
-  });
-
-  it('shows the pronunciation and explanation of the selected character', () => {
+  it('shows the romaja and explanation of the selected character', () => {
     renderChart();
     expect(screen.queryByText(/Đứng đầu âm tiết/)).not.toBeInTheDocument();
 
-    fireEvent.click(cell(/^ㅇ, đọc là câm\/ng$/));
+    fireEvent.click(cell(/^ㅇ, đọc là ng$/));
 
-    expect(screen.getByText(/Đứng đầu âm tiết: không phát âm/)).toBeInTheDocument();
-    expect(cell(/^ㅇ, đọc là câm\/ng$/)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Đứng đầu âm tiết thì câm/)).toBeInTheDocument();
+    expect(cell(/^ㅇ, đọc là ng$/)).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('asks for Korean speech when a character is selected', () => {
+  it('speaks a real syllable, never the bare jamo', () => {
+    // Speech engines read a lone ㄴ as its letter name ("니은"), so the chart
+    // hands over the demo syllable instead.
     const { onSpeak } = renderChart();
     fireEvent.click(cell(/^ㄴ, đọc là n$/));
-    expect(onSpeak).toHaveBeenCalledWith('ㄴ');
+    expect(onSpeak).toHaveBeenCalledWith('나');
+  });
+
+  it('tells screen reader users that a cell is tappable for audio', () => {
+    renderChart({ canSpeak: true });
+    expect(cell(/^ㄴ, đọc là n, chạm để nghe$/)).toBeInTheDocument();
+  });
+
+  it('says nothing about audio when the device has no Korean voice', () => {
+    renderChart({ canSpeak: false });
+    expect(screen.queryByRole('button', { name: /chạm để nghe/ })).not.toBeInTheDocument();
   });
 
   it('marks mastered characters in their accessible name, not just by colour', () => {
@@ -71,10 +69,10 @@ describe('HangulChart', () => {
         currentUnassistedCorrectStreak: 5,
       }),
     };
-    renderChart({ progress, onConsult: noop, onSpeak: noop });
+    renderChart({ progress, onSpeak: noop });
 
     expect(cell(/^ㄴ, đọc là n, đã thuộc$/)).toBeInTheDocument();
-    expect(cell(/^ㄱ, đọc là g\/k$/)).toBeInTheDocument();
+    expect(cell(/^ㄱ, đọc là g$/)).toBeInTheDocument();
   });
 
   it('marks the character being asked when the tab may reveal it', () => {

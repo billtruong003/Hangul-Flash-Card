@@ -191,3 +191,83 @@ export function SpeakerIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+// ── Section icons ────────────────────────────────────────────────────────────
+
+/** Học chữ — a flashcard. */
+export function CardsIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect
+        x="2.6"
+        y="5.4"
+        width="10.5"
+        height="11"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M6.4 3.5h7.6a2.6 2.6 0 0 1 2.6 2.6v7.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** Viết — a pen on a baseline. */
+export function PenIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="m12.6 3.6 3.2 3.2-7.5 7.5-4 .8.8-4z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M3.2 17.4h13.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Ghép chữ — two blocks joining into one. */
+export function BlocksIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2.6" y="2.8" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect
+        x="11.4"
+        y="2.8"
+        width="6"
+        height="6"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <rect x="7" y="11.4" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+/** Nghe — sound arriving at an ear. */
+export function EarIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M6.2 8a3.8 3.8 0 1 1 7.6 0c0 2-1.6 2.8-2.6 3.8-.7.7-.8 1.4-.8 2.2a2 2 0 0 1-3.4 1.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.2 8.2a1 1 0 0 1 1.9.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

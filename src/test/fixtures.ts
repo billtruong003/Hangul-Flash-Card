@@ -62,7 +62,9 @@ export function makeCharacter(
   return {
     id,
     character: id.toUpperCase(),
-    pronunciation: id,
+    romaja: id,
+    // Stand-in only. Tests that care about what gets spoken use the real table.
+    demoSyllable: '가',
     category: 'basic-consonant',
     ...overrides,
   };

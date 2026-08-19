@@ -43,22 +43,28 @@ describe('buildAnswerOptions', () => {
     }
   });
 
-  it('never shows two options with the same pronunciation label', () => {
+  it('never shows two options with the same romaja label', () => {
     for (const correct of HANGUL_CHARACTERS) {
       const options = buildAnswerOptions(correct, HANGUL_CHARACTERS, random);
-      const labels = options.map((option) => option.pronunciation);
+      const labels = options.map((option) => option.romaja);
       expect(new Set(labels).size).toBe(OPTION_COUNT);
     }
   });
 
-  it('keeps ㅙ and ㅞ apart even though both read "we"', () => {
+  it('lets ㅙ and ㅞ sit side by side now that they romanize differently', () => {
+    // Under the old Vietnamese-approximated labels both of these read "we", so
+    // one had to be filtered out or the question had two right answers. Revised
+    // Romanization separates them into wae and we, which turns a former conflict
+    // into the most useful distractor pair there is: they sound nearly identical
+    // and can only be told apart by spelling.
     const wae = CHARACTERS_BY_ID['v-wae'];
-    for (let i = 0; i < 200; i += 1) {
-      const options = buildAnswerOptions(wae, HANGUL_CHARACTERS, seededRandom(i + 1));
-      const ids = options.map((option) => option.id);
-      expect(ids).toContain('v-wae');
-      expect(ids).not.toContain('v-we');
-    }
+    expect(wae.romaja).not.toBe(CHARACTERS_BY_ID['v-we'].romaja);
+
+    const seenTogether = Array.from({ length: 200 }, (_, i) =>
+      buildAnswerOptions(wae, HANGUL_CHARACTERS, seededRandom(i + 1)).map((option) => option.id),
+    );
+    for (const ids of seenTogether) expect(ids).toContain('v-wae');
+    expect(seenTogether.some((ids) => ids.includes('v-we'))).toBe(true);
   });
 
   it('prefers declared confusables as distractors', () => {
@@ -69,14 +75,14 @@ describe('buildAnswerOptions', () => {
   });
 
   it('prefers the same category when confusables are unavailable', () => {
-    const correct = makeCharacter('x1', { category: 'basic-vowel', pronunciation: 'p1' });
+    const correct = makeCharacter('x1', { category: 'basic-vowel', romaja: 'p1' });
     const sameCategory = [
-      makeCharacter('x2', { category: 'basic-vowel', pronunciation: 'p2' }),
-      makeCharacter('x3', { category: 'basic-vowel', pronunciation: 'p3' }),
-      makeCharacter('x4', { category: 'basic-vowel', pronunciation: 'p4' }),
+      makeCharacter('x2', { category: 'basic-vowel', romaja: 'p2' }),
+      makeCharacter('x3', { category: 'basic-vowel', romaja: 'p3' }),
+      makeCharacter('x4', { category: 'basic-vowel', romaja: 'p4' }),
     ];
     const otherCategory = Array.from({ length: 6 }, (_, i) =>
-      makeCharacter(`y${i}`, { category: 'tense-consonant', pronunciation: `q${i}` }),
+      makeCharacter(`y${i}`, { category: 'tense-consonant', romaja: `q${i}` }),
     );
 
     const options = buildAnswerOptions(
@@ -88,12 +94,12 @@ describe('buildAnswerOptions', () => {
   });
 
   it('falls back to other categories when the pool is small', () => {
-    const correct = makeCharacter('x1', { category: 'basic-vowel', pronunciation: 'p1' });
+    const correct = makeCharacter('x1', { category: 'basic-vowel', romaja: 'p1' });
     const pool = [
       correct,
-      makeCharacter('x2', { category: 'basic-vowel', pronunciation: 'p2' }),
-      makeCharacter('y1', { category: 'tense-consonant', pronunciation: 'q1' }),
-      makeCharacter('y2', { category: 'tense-consonant', pronunciation: 'q2' }),
+      makeCharacter('x2', { category: 'basic-vowel', romaja: 'p2' }),
+      makeCharacter('y1', { category: 'tense-consonant', romaja: 'q1' }),
+      makeCharacter('y2', { category: 'tense-consonant', romaja: 'q2' }),
     ];
     const options = buildAnswerOptions(correct, pool, seededRandom(5));
     expect(options).toHaveLength(OPTION_COUNT);
@@ -101,12 +107,12 @@ describe('buildAnswerOptions', () => {
   });
 
   it('allows duplicate labels only when the pool leaves no alternative', () => {
-    const correct = makeCharacter('x1', { pronunciation: 'same' });
+    const correct = makeCharacter('x1', { romaja: 'same' });
     const pool = [
       correct,
-      makeCharacter('x2', { pronunciation: 'same' }),
-      makeCharacter('x3', { pronunciation: 'same' }),
-      makeCharacter('x4', { pronunciation: 'same' }),
+      makeCharacter('x2', { romaja: 'same' }),
+      makeCharacter('x3', { romaja: 'same' }),
+      makeCharacter('x4', { romaja: 'same' }),
     ];
     const options = buildAnswerOptions(correct, pool, seededRandom(9));
     expect(options).toHaveLength(OPTION_COUNT);
@@ -114,10 +120,10 @@ describe('buildAnswerOptions', () => {
   });
 
   it('returns what it can when the pool is smaller than four', () => {
-    const correct = makeCharacter('x1', { pronunciation: 'p1' });
+    const correct = makeCharacter('x1', { romaja: 'p1' });
     const options = buildAnswerOptions(
       correct,
-      [correct, makeCharacter('x2', { pronunciation: 'p2' })],
+      [correct, makeCharacter('x2', { romaja: 'p2' })],
       seededRandom(1),
     );
     expect(options).toHaveLength(2);
