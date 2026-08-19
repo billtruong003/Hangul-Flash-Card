@@ -21,12 +21,21 @@ tài khoản, không có backend, tiến độ lưu trong LocalStorage.
 - **Thống kê phiên**: đúng, có trợ giúp, sai, chuỗi hiện tại, chuỗi cao nhất, số chữ đã thuộc trên
   tổng số chữ đang học.
 - **Ôn chữ sai**: chỉ hỏi những chữ từng trả lời sai, ưu tiên chữ có tỉ lệ đúng thấp nhất.
-- **Phát âm tùy chọn** qua Web Speech API (`ko-KR`), tự tắt nếu trình duyệt không hỗ trợ.
+- **Phát âm chuẩn quốc tế**: cách đọc ghi theo Revised Romanization (`g`, `eo`, `ae`, `kk`…) thay vì
+  phiên âm bồi. Quy luật biến âm theo vị trí (`ㄱ` đầu đọc `g`, cuối đọc `k`) được ghi riêng chứ
+  không nhồi chung vào một nhãn.
+- **Nghe từng âm** qua Web Speech API (`ko-KR`). Máy không có giọng tiếng Hàn thì nút tự tắt và ứng
+  dụng im lặng, chứ không đọc Hangul bằng giọng tiếng Anh.
 - **Phím tắt trên desktop**, dark mode theo cài đặt hệ thống, tôn trọng `prefers-reduced-motion`.
 
 ## Bắt đầu
 
-Yêu cầu Node.js 20.19+ (khuyến nghị 22 hoặc mới hơn).
+Yêu cầu **Node.js 22.10 trở lên**.
+
+Bản build và dev server chạy được trên Node 20, nhưng `npm run test` thì không: `jsdom@30` kéo theo
+`undici@8`, mà gói này gọi `worker_threads.markAsUncloneable` — hàm chỉ có từ Node 22.10. Trên Node
+20 toàn bộ test sẽ đổ với `TypeError: webidl.util.markAsUncloneable is not a function`, và thông báo
+đó không hề gợi ý rằng nguyên nhân là phiên bản Node.
 
 ```bash
 npm install
