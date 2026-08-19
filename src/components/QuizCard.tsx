@@ -1,6 +1,7 @@
 import type { Feedback } from '../hooks/useQuiz';
 import type { AnswerResult, Question, QuizMode } from '../types';
-import { AnswerButton, type AnswerState } from './AnswerButton';
+import { AnswerButton } from './AnswerButton';
+import { answerStateFor } from './answerState';
 import { AssistIcon, CheckIcon, CrossIcon, SpeakerIcon } from './icons';
 
 type QuizCardProps = {
@@ -32,15 +33,6 @@ function ResultIcon({ result }: { result: AnswerResult }) {
   if (result === 'correct-unassisted') return <CheckIcon className="h-4 w-4" />;
   if (result === 'correct-assisted') return <AssistIcon className="h-4 w-4" />;
   return <CrossIcon className="h-4 w-4" />;
-}
-
-function answerStateFor(optionId: string, feedback: Feedback | null): AnswerState {
-  if (!feedback) return 'idle';
-  if (optionId === feedback.correctId) {
-    return feedback.result === 'correct-assisted' ? 'assisted' : 'correct';
-  }
-  if (optionId === feedback.selectedId) return 'incorrect';
-  return 'dimmed';
 }
 
 export function QuizCard({
@@ -117,7 +109,10 @@ export function QuizCard({
                 : `Đáp án ${index + 1}: chữ ${option.character}`
             }
             isHangul={!showsHangulPrompt}
-            state={answerStateFor(option.id, feedback)}
+            state={answerStateFor(
+              option.id,
+              feedback && { ...feedback, assisted: feedback.result === 'correct-assisted' },
+            )}
             disabled={feedback !== null}
             shortcut={index + 1}
             onSelect={() => onSelect(option.id)}

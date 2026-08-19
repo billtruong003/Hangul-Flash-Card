@@ -50,8 +50,10 @@ export default function App() {
     trackChartOpened({ mode: letterMode, mobile: !isDesktop });
   }, [isDesktop, letterMode]);
 
-  const { chartOpen, toggleChart, closeChart, setChartOpen, registerConsumer, notifyConsult } =
-    useChart({ locked: testMode, onOpened: onChartOpened });
+  const { chartOpen, toggleChart, closeChart } = useChart({
+    locked: testMode,
+    onOpened: onChartOpened,
+  });
 
   const letters = useLettersQuiz({ state, setState, mode: letterMode, chartOpen });
 
@@ -94,9 +96,9 @@ export default function App() {
       ...current,
       settings: { ...current.settings, testMode: !current.settings.testMode },
     }));
-    setChartOpen(false);
+    closeChart();
     if (!testMode) trackTestModeStarted();
-  }, [setChartOpen, setState, testMode]);
+  }, [closeChart, setState, testMode]);
 
   const resetLetters = letters.reset;
   const handleClearProgress = useCallback(() => {
@@ -136,7 +138,6 @@ export default function App() {
           : null
       }
       canSpeak={canSpeak}
-      onConsult={notifyConsult}
       onSpeak={handleSpeak}
     />
   );
@@ -150,7 +151,6 @@ export default function App() {
         canSpeak={canSpeak}
         testMode={testMode}
         shortcutsDisabled={confirmOpen}
-        registerChartConsumer={registerConsumer}
       />
     ),
     writing: (

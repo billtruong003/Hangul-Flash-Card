@@ -17,14 +17,6 @@ type TabBarProps = {
  * Renders nothing for a single tab: a one-tab tablist is noise for screen
  * reader users, and three of the four surfaces start with exactly one sub-mode.
  */
-// Tailwind only ships classes it can see in the source, so the column count
-// has to be a literal rather than an interpolated `grid-cols-${n}`.
-const COLUMNS: Record<number, string> = {
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-};
-
 export function TabBar({ tabs, activeId, panelId, label, onChange }: TabBarProps) {
   if (tabs.length < 2) return null;
 
@@ -32,10 +24,7 @@ export function TabBar({ tabs, activeId, panelId, label, onChange }: TabBarProps
     <div
       role="tablist"
       aria-label={label}
-      className={[
-        'grid gap-1 rounded-2xl bg-slate-200/70 p-1 dark:bg-slate-800/70',
-        COLUMNS[tabs.length] ?? 'grid-cols-2',
-      ].join(' ')}
+      className="flex gap-1 rounded-2xl bg-slate-200/70 p-1 dark:bg-slate-800/70"
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeId;
@@ -49,7 +38,7 @@ export function TabBar({ tabs, activeId, panelId, label, onChange }: TabBarProps
             aria-controls={panelId}
             onClick={() => onChange(tab.id)}
             className={[
-              'rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors sm:text-base',
+              'flex-1 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors sm:text-base',
               isActive
                 ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-white'
                 : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100',

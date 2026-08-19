@@ -92,7 +92,7 @@ describe('parsePersistedState', () => {
         },
       },
       listening: {
-        s01: {
+        s001: {
           heardCount: 5,
           correctCount: 4,
           incorrectCount: 1,
@@ -114,12 +114,12 @@ describe('parsePersistedState', () => {
       version: 3,
       strokes: { 'c-g': {}, 'not-a-letter': { attemptCount: 9 } },
       syllables: { 감: {}, 뷁: { builtCount: 9 } },
-      listening: { s01: {}, 'retired-sentence': { heardCount: 9 } },
+      listening: { s001: {}, 'retired-sentence': { heardCount: 9 } },
     });
 
     expect(Object.keys(parsed.strokes)).toEqual(['c-g']);
     expect(Object.keys(parsed.syllables)).toEqual(['감']);
-    expect(Object.keys(parsed.listening)).toEqual(['s01']);
+    expect(Object.keys(parsed.listening)).toEqual(['s001']);
   });
 
   it('clamps a stroke score into 0–100 and repairs broken counters', () => {

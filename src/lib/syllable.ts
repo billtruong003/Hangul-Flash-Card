@@ -120,9 +120,6 @@ export function romanizeKorean(text: string): string {
   return romanize(text);
 }
 
-/** The seven sounds every Korean final consonant collapses onto. */
-export const BATCHIM_SOUNDS = ['k', 'n', 't', 'l', 'm', 'p', 'ng'] as const;
-
 /** Letters that can close a syllable, in chart order. */
 export const POSSIBLE_FINALS: HangulCharacter[] = HANGUL_CHARACTERS.filter(
   (character) => typeof character.finalRomaja === 'string',

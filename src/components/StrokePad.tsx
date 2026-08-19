@@ -1,7 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import type { Point, Stroke } from '../lib/stroke';
-
-export type StrokeFeedback = 'idle' | 'wrong' | 'backwards';
+import type { Point, Stroke, StrokeFeedback } from '../lib/stroke';
 
 type StrokePadProps = {
   strokes: Stroke[];

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { SYLLABLES } from '../data/syllables';
 import { trackSyllableBuilt } from '../lib/analytics';
+import { pickLeastPractised } from '../lib/quiz';
 import { primeSpeechOnGesture, speak } from '../lib/speech';
 import { compose, decompose } from '../lib/syllable';
 import type { PersistedState, SyllableEntry, SyllableProgress } from '../types';
@@ -21,18 +22,16 @@ function pickNext(
   progress: Record<string, SyllableProgress>,
   avoid: string | null,
 ): SyllableEntry | null {
-  const pool = entries.filter((entry) => entry.syllable !== avoid);
-  if (pool.length === 0) return entries[0] ?? null;
-
-  const scoreOf = (entry: SyllableEntry) => {
-    const seen = progress[entry.syllable];
-    if (!seen) return 0;
-    return seen.correctCount + 1 - Math.min(seen.incorrectCount, 3) * 0.5;
-  };
-
-  const lowest = Math.min(...pool.map(scoreOf));
-  const candidates = pool.filter((entry) => scoreOf(entry) === lowest);
-  return candidates[Math.floor(Math.random() * candidates.length)];
+  return pickLeastPractised(
+    entries,
+    (entry) => entry.syllable,
+    (entry) => {
+      const seen = progress[entry.syllable];
+      // Getting one wrong pulls it back toward the front of the queue.
+      return seen ? seen.correctCount + 1 - Math.min(seen.incorrectCount, 3) * 0.5 : 0;
+    },
+    avoid,
+  );
 }
 
 type UseSyllableBuilderArgs = {
@@ -48,8 +47,8 @@ type UseSyllableBuilderArgs = {
  * which recognising ㄱ on a flashcard never does.
  */
 export function useSyllableBuilder({ state, setState, soundEnabled }: UseSyllableBuilderArgs) {
-  const [target, setTarget] = useState<SyllableEntry | null>(
-    () => pickNext(SYLLABLES, state.syllables, null) ?? null,
+  const [target, setTarget] = useState<SyllableEntry | null>(() =>
+    pickNext(SYLLABLES, state.syllables, null),
   );
   const [initialId, setInitialId] = useState<string | null>(null);
   const [medialId, setMedialId] = useState<string | null>(null);
@@ -121,12 +120,12 @@ export function useSyllableBuilder({ state, setState, soundEnabled }: UseSyllabl
   }, [clear, state.syllables]);
 
   const reveal = useCallback(() => {
-    if (!answer || !target) return;
+    if (!answer) return;
     setInitialId(answer.initial.id);
     setMedialId(answer.medial.id);
     setFinalId(answer.final?.id ?? null);
     setMissedThisRound(true);
-  }, [answer, target]);
+  }, [answer]);
 
   return {
     target,

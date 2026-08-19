@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { QuizActions } from '../components/QuizActions';
 import { QuizCard } from '../components/QuizCard';
 import { StatsPanel } from '../components/StatsPanel';
@@ -15,8 +14,6 @@ type LettersSectionProps = {
   canSpeak: boolean;
   testMode: boolean;
   shortcutsDisabled: boolean;
-  /** Lets the shell tell this surface the chart was consulted. */
-  registerChartConsumer: (onConsult: () => void) => () => void;
 };
 
 export function LettersSection({
@@ -26,11 +23,9 @@ export function LettersSection({
   canSpeak,
   testMode,
   shortcutsDisabled,
-  registerChartConsumer,
 }: LettersSectionProps) {
   const {
     quiz,
-    markAssisted,
     reviewMode,
     toggleReviewMode,
     reviewCandidates,
@@ -44,10 +39,6 @@ export function LettersSection({
 
   const { question, feedback } = quiz;
   const hasNothingToReview = reviewMode && reviewCandidates.length === 0;
-
-  // The chart lives in the shell because every surface can open it, but only
-  // this one treats consulting it as assistance.
-  useEffect(() => registerChartConsumer(markAssisted), [markAssisted, registerChartConsumer]);
 
   useKeyboardShortcuts(
     {

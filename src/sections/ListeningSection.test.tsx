@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import App from '../App';
 import { SENTENCES } from '../data/sentences';
 import { createDefaultState } from '../lib/storage';
@@ -191,11 +191,9 @@ describe('the reveal', () => {
   });
 
   it('does not leak the answer into the DOM before it is given', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
     openListening();
 
     expect(panel().querySelector('[lang="ko"]')).toBeNull();
     expect(panel().querySelector('[lang="ko-Latn"]')).toBeNull();
-    vi.mocked(Math.random).mockRestore();
   });
 });

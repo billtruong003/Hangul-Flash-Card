@@ -7,12 +7,11 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
-import { HANGUL_CHARACTERS } from '../data/hangul';
+import { charactersInCategories } from '../data/hangul';
 import { STROKES } from '../data/strokes';
 import { trackStrokeAttempt } from '../lib/analytics';
-import { matchStroke, scoreAttempt, type Point } from '../lib/stroke';
+import { matchStroke, scoreAttempt, type Point, type StrokeFeedback } from '../lib/stroke';
 import type { HangulCharacter, PersistedState, StrokeProgress } from '../types';
-import type { StrokeFeedback } from '../components/StrokePad';
 
 const DEMO_STEP_MS = 420;
 
@@ -42,10 +41,7 @@ type UseStrokePracticeArgs = {
 export function useStrokePractice({ state, setState }: UseStrokePracticeArgs) {
   const { enabledCategories } = state.settings;
 
-  const letters = useMemo(
-    () => HANGUL_CHARACTERS.filter((letter) => enabledCategories.includes(letter.category)),
-    [enabledCategories],
-  );
+  const letters = useMemo(() => charactersInCategories(enabledCategories), [enabledCategories]);
 
   const [index, setIndex] = useState(0);
   const letter: HangulCharacter | undefined = letters[Math.min(index, letters.length - 1)];
@@ -143,13 +139,10 @@ export function useStrokePractice({ state, setState }: UseStrokePracticeArgs) {
     [completed, letter, recordFinished, showHint, strokes],
   );
 
-  const goTo = useCallback(
-    (direction: -1 | 1) => {
-      if (letters.length === 0) return;
-      setIndex((current) => (current + direction + letters.length) % letters.length);
-    },
-    [letters.length],
-  );
+  const next = useCallback(() => {
+    if (letters.length === 0) return;
+    setIndex((current) => (current + 1) % letters.length);
+  }, [letters.length]);
 
   const progress = letter ? state.strokes[letter.id] : undefined;
 
@@ -169,8 +162,7 @@ export function useStrokePractice({ state, setState }: UseStrokePracticeArgs) {
       setDemoStroke(0);
     },
     retry: reset,
-    next: () => goTo(1),
-    previous: () => goTo(-1),
+    next,
     handleStrokeDrawn,
   };
 }

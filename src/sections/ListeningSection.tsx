@@ -1,9 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { ANSWER_STATE_CLASSES, answerStateFor } from '../components/answerState';
 import { TabBar } from '../components/TabBar';
 import { CheckIcon, CrossIcon, SpeakerIcon } from '../components/icons';
+import { SENTENCE_TOPICS } from '../data/sentences';
 import { useListening } from '../hooks/useListening';
 import { romanizeKorean } from '../lib/syllable';
-import type { PersistedState, SentenceLevel } from '../types';
+import type { PersistedState, SentenceLevel, SentenceTopic } from '../types';
 
 type ListeningSectionProps = {
   state: PersistedState;
@@ -16,6 +18,15 @@ const LEVEL_TABS = [
   { id: '2', label: 'Cụm nói' },
   { id: '3', label: 'Câu' },
 ];
+
+function topicClass(active: boolean): string {
+  return [
+    'rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
+    active
+      ? 'bg-sky-600 text-white'
+      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700',
+  ].join(' ');
+}
 
 export function ListeningSection({ state, setState, canSpeak }: ListeningSectionProps) {
   const listening = useListening({ state, setState, soundEnabled: canSpeak });
@@ -31,6 +42,34 @@ export function ListeningSection({ state, setState, canSpeak }: ListeningSection
         onChange={(id) => listening.changeLevel(Number(id) as SentenceLevel)}
       />
 
+      {/* Topic and level are independent filters, so "Tất cả" is a real choice
+          here rather than an eleventh topic. */}
+      <div
+        role="group"
+        aria-label="Chủ đề"
+        className="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 p-1.5 dark:border-slate-800"
+      >
+        <button
+          type="button"
+          onClick={() => listening.changeTopic(null)}
+          aria-pressed={listening.topic === null}
+          className={topicClass(listening.topic === null)}
+        >
+          Tất cả
+        </button>
+        {(Object.keys(SENTENCE_TOPICS) as SentenceTopic[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => listening.changeTopic(id)}
+            aria-pressed={listening.topic === id}
+            className={topicClass(listening.topic === id)}
+          >
+            {SENTENCE_TOPICS[id]}
+          </button>
+        ))}
+      </div>
+
       {!canSpeak && (
         <p className="rounded-xl bg-amber-100 px-3 py-2 text-center text-xs font-medium text-amber-900 sm:text-sm dark:bg-amber-950/50 dark:text-amber-200">
           Bật <span className="font-semibold">Âm thanh</span> để nghe. Máy không có giọng tiếng Hàn
@@ -45,7 +84,7 @@ export function ListeningSection({ state, setState, canSpeak }: ListeningSection
       >
         {!current ? (
           <p className="text-center text-sm text-slate-600 dark:text-slate-300">
-            Chưa có câu nào ở mức này.
+            Chưa có câu nào cho mức và chủ đề này.
           </p>
         ) : (
           <>
@@ -63,21 +102,20 @@ export function ListeningSection({ state, setState, canSpeak }: ListeningSection
                 <SpeakerIcon className="h-9 w-9" />
               </button>
               <p className="min-h-[1rem] text-[11px] text-slate-400 dark:text-slate-500">
-                {listening.replays > 0 && !answered && `Đã nghe ${listening.replays} lần`}
+                {listening.replays > 0 && !answered
+                  ? `Đã nghe ${listening.replays} lần`
+                  : `${listening.poolSize} câu trong nhóm này`}
               </p>
             </div>
 
             <div className="grid gap-2.5">
               {options.map((option, index) => {
-                const chosen = option.id === selectedId;
-                const correct = option.id === current.id;
-                const tone = !answered
-                  ? 'border-slate-200 bg-white hover:border-sky-400 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-sky-500 dark:hover:bg-slate-800'
-                  : correct
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/60 dark:text-emerald-100'
-                    : chosen
-                      ? 'animate-shake border-rose-500 bg-rose-50 text-rose-900 dark:border-rose-500 dark:bg-rose-950/60 dark:text-rose-100'
-                      : 'border-slate-200 bg-white opacity-50 dark:border-slate-800 dark:bg-slate-900';
+                const state = answerStateFor(
+                  option.id,
+                  selectedId === null
+                    ? null
+                    : { selectedId, correctId: current.id, assisted: false },
+                );
 
                 return (
                   <button
@@ -90,7 +128,7 @@ export function ListeningSection({ state, setState, canSpeak }: ListeningSection
                     aria-label={`Nghĩa ${index + 1}: ${option.vi}`}
                     className={[
                       'rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition-colors disabled:cursor-default sm:text-base',
-                      tone,
+                      ANSWER_STATE_CLASSES[state],
                     ].join(' ')}
                   >
                     {option.vi}

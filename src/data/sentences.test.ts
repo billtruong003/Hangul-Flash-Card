@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SENTENCES, SENTENCES_BY_ID } from './sentences';
+import { SENTENCES, SENTENCES_BY_ID, SENTENCE_TOPICS } from './sentences';
 import { romanizeKorean } from '../lib/syllable';
 
 const HANGUL_SYLLABLE = /^[가-힣]+$/;
@@ -63,5 +63,32 @@ describe('the listening deck', () => {
       const count = SENTENCES.filter((entry) => entry.level === level).length;
       expect(count, `level ${level}`).toBeGreaterThanOrEqual(4);
     }
+  });
+
+  it('gives every topic enough sentences at every level to build a question', () => {
+    // Topic and level filter independently, so every combination has to be
+    // playable — four options means four sentences minimum in each cell.
+    for (const topic of Object.keys(SENTENCE_TOPICS)) {
+      for (const level of [1, 2, 3] as const) {
+        const count = SENTENCES.filter(
+          (entry) => entry.topic === topic && entry.level === level,
+        ).length;
+        expect(count, `${topic} / level ${level}`).toBeGreaterThanOrEqual(4);
+      }
+    }
+  });
+
+  it('labels every topic it uses, and uses every topic it labels', () => {
+    const used = new Set(SENTENCES.map((entry) => entry.topic));
+    expect([...used].sort()).toEqual(Object.keys(SENTENCE_TOPICS).sort());
+    for (const label of Object.values(SENTENCE_TOPICS)) {
+      expect(label.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps every Vietnamese meaning unique, so options are never ambiguous', () => {
+    // Two options reading the same would make a question unanswerable.
+    const meanings = SENTENCES.map((entry) => entry.vi);
+    expect(new Set(meanings).size).toBe(meanings.length);
   });
 });

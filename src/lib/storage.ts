@@ -1,4 +1,5 @@
 import { CATEGORY_ORDER, CHARACTERS_BY_ID, DEFAULT_ENABLED_CATEGORIES } from '../data/hangul';
+import { SECTION_IDS } from '../data/sections';
 import { SENTENCES_BY_ID } from '../data/sentences';
 import { SYLLABLES_BY_ID } from '../data/syllables';
 import type {
@@ -21,8 +22,6 @@ export const STORAGE_VERSION = 3;
 const SUPPORTED_VERSIONS: unknown[] = [1, 2, STORAGE_VERSION];
 
 const ANSWER_RESULTS: AnswerResult[] = ['correct-unassisted', 'correct-assisted', 'incorrect'];
-
-const SECTIONS: LearningSection[] = ['letters', 'writing', 'syllables', 'listening'];
 
 export function createDefaultState(): PersistedState {
   return {
@@ -173,7 +172,7 @@ function parseListeningProgress(value: unknown): ListeningProgress | null {
 }
 
 function parseSection(value: unknown): LearningSection {
-  return SECTIONS.find((section) => section === value) ?? 'letters';
+  return SECTION_IDS.find((section) => section === value) ?? 'letters';
 }
 
 function parseEnabledCategories(value: unknown): string[] {

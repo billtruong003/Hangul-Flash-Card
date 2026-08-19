@@ -442,6 +442,15 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
   },
 ];
 
+/**
+ * The letters currently being studied. Both the quiz and the writing pad show
+ * this to the learner as "nhóm đã bật trong cài đặt", so it is derived once
+ * here rather than filtered independently in each surface.
+ */
+export function charactersInCategories(categories: readonly string[]): HangulCharacter[] {
+  return HANGUL_CHARACTERS.filter((character) => categories.includes(character.category));
+}
+
 export const CHARACTERS_BY_ID: Record<string, HangulCharacter> = Object.fromEntries(
   HANGUL_CHARACTERS.map((character) => [character.id, character]),
 );

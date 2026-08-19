@@ -1,11 +1,15 @@
 import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { SENTENCES } from '../data/sentences';
 import { trackListeningAnswer } from '../lib/analytics';
-import { shuffle } from '../lib/quiz';
+import { OPTION_COUNT, pickLeastPractised, shuffle } from '../lib/quiz';
 import { primeSpeechOnGesture, speak } from '../lib/speech';
-import type { ListeningProgress, PersistedState, SentenceEntry, SentenceLevel } from '../types';
-
-const OPTION_COUNT = 4;
+import type {
+  ListeningProgress,
+  PersistedState,
+  SentenceEntry,
+  SentenceLevel,
+  SentenceTopic,
+} from '../types';
 
 function emptyListeningProgress(): ListeningProgress {
   return {
@@ -24,14 +28,12 @@ function pickNext(
   progress: Record<string, ListeningProgress>,
   avoid: string | null,
 ): SentenceEntry | null {
-  const candidates = pool.filter((entry) => entry.id !== avoid);
-  const usable = candidates.length > 0 ? candidates : pool;
-  if (usable.length === 0) return null;
-
-  const scoreOf = (entry: SentenceEntry) => progress[entry.id]?.correctCount ?? 0;
-  const lowest = Math.min(...usable.map(scoreOf));
-  const leastKnown = usable.filter((entry) => scoreOf(entry) === lowest);
-  return leastKnown[Math.floor(Math.random() * leastKnown.length)];
+  return pickLeastPractised(
+    pool,
+    (entry) => entry.id,
+    (entry) => progress[entry.id]?.correctCount ?? 0,
+    avoid,
+  );
 }
 
 /** The correct meaning plus three others from the same level. */
@@ -56,28 +58,48 @@ type UseListeningArgs = {
  * cannot be solved by matching shapes on screen — the learner has to have
  * understood the audio. The Hangul only appears afterwards, in the breakdown.
  */
+/**
+ * Level and topic are independent filters over the same deck, so `null` topic
+ * means "every topic at this level" rather than a fourth pseudo-topic.
+ */
+function poolFor(level: SentenceLevel, topic: SentenceTopic | null): SentenceEntry[] {
+  return SENTENCES.filter(
+    (entry) => entry.level === level && (topic === null || entry.topic === topic),
+  );
+}
+
+type Round = { entry: SentenceEntry; options: SentenceEntry[] };
+
 export function useListening({ state, setState, soundEnabled }: UseListeningArgs) {
   const [level, setLevel] = useState<SentenceLevel>(1);
+  const [topic, setTopic] = useState<SentenceTopic | null>(null);
 
-  const pool = useMemo(() => SENTENCES.filter((entry) => entry.level === level), [level]);
+  const pool = useMemo(() => poolFor(level, topic), [level, topic]);
 
-  const [current, setCurrent] = useState<SentenceEntry | null>(() =>
-    pickNext(
-      SENTENCES.filter((entry) => entry.level === 1),
-      state.listening,
-      null,
-    ),
+  // The question and its options are one thing, so they are one piece of state.
+  // Keeping them apart meant restoring the invariant by hand in three places.
+  const startRound = useCallback(
+    (
+      from: SentenceEntry[],
+      avoid: string | null,
+      progress: PersistedState['listening'],
+    ): Round | null => {
+      const entry = pickNext(from, progress, avoid);
+      return entry ? { entry, options: buildOptions(entry, from) } : null;
+    },
+    [],
   );
-  const [options, setOptions] = useState<SentenceEntry[]>(() =>
-    current
-      ? buildOptions(
-          current,
-          SENTENCES.filter((entry) => entry.level === 1),
-        )
-      : [],
-  );
+
+  const [round, setRound] = useState<Round | null>(() => {
+    const initial = poolFor(1, null);
+    const entry = pickNext(initial, state.listening, null);
+    return entry ? { entry, options: buildOptions(entry, initial) } : null;
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [replays, setReplays] = useState(0);
+
+  const current = round?.entry ?? null;
+  const options = round?.options ?? [];
 
   const answered = selectedId !== null;
   const isCorrect = answered && selectedId === current?.id;
@@ -132,31 +154,41 @@ export function useListening({ state, setState, soundEnabled }: UseListeningArgs
     [answered, current, record, replays, soundEnabled],
   );
 
-  const next = useCallback(() => {
-    const entry = pickNext(pool, state.listening, current?.id ?? null);
-    setCurrent(entry);
-    setOptions(entry ? buildOptions(entry, pool) : []);
-    setSelectedId(null);
-    setReplays(0);
-  }, [current, pool, state.listening]);
+  const deal = useCallback(
+    (from: SentenceEntry[], avoid: string | null) => {
+      setRound(startRound(from, avoid, state.listening));
+      setSelectedId(null);
+      setReplays(0);
+    },
+    [startRound, state.listening],
+  );
+
+  const next = useCallback(() => deal(pool, current?.id ?? null), [current, deal, pool]);
 
   const changeLevel = useCallback(
     (nextLevel: SentenceLevel) => {
       if (nextLevel === level) return;
-      const nextPool = SENTENCES.filter((entry) => entry.level === nextLevel);
-      const entry = pickNext(nextPool, state.listening, null);
       setLevel(nextLevel);
-      setCurrent(entry);
-      setOptions(entry ? buildOptions(entry, nextPool) : []);
-      setSelectedId(null);
-      setReplays(0);
+      deal(poolFor(nextLevel, topic), null);
     },
-    [level, state.listening],
+    [deal, level, topic],
+  );
+
+  const changeTopic = useCallback(
+    (nextTopic: SentenceTopic | null) => {
+      if (nextTopic === topic) return;
+      setTopic(nextTopic);
+      deal(poolFor(level, nextTopic), null);
+    },
+    [deal, level, topic],
   );
 
   return {
     level,
     changeLevel,
+    topic,
+    changeTopic,
+    poolSize: pool.length,
     current,
     options,
     selectedId,

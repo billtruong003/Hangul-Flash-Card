@@ -122,6 +122,38 @@ export function buildAnswerOptions(
   return shuffle(chosen, random);
 }
 
+/**
+ * Picks the least-practised item, breaking ties at random, and never returns
+ * `avoidKey` while another candidate exists. Scores each item once — the two
+ * decks that used to do this inline scored every entry twice, via a
+ * `Math.min(...map())` followed by a `filter`.
+ */
+export function pickLeastPractised<T>(
+  items: readonly T[],
+  keyOf: (item: T) => string,
+  scoreOf: (item: T) => number,
+  avoidKey: string | null,
+  random: RandomFn = Math.random,
+): T | null {
+  if (items.length === 0) return null;
+
+  const withoutRepeat = items.filter((item) => keyOf(item) !== avoidKey);
+  const pool = withoutRepeat.length > 0 ? withoutRepeat : items;
+
+  let lowest = Infinity;
+  const tied: T[] = [];
+  for (const item of pool) {
+    const score = scoreOf(item);
+    if (score < lowest) {
+      lowest = score;
+      tied.length = 0;
+    }
+    if (score === lowest) tied.push(item);
+  }
+
+  return tied[Math.floor(random() * tied.length)];
+}
+
 /** Characters the learner has gotten wrong at least once, worst accuracy first. */
 export function getReviewCandidates(
   characters: readonly HangulCharacter[],

@@ -19,11 +19,16 @@ export type Point = readonly [number, number];
 export type Stroke = readonly Point[];
 
 export type StrokeMatchOptions = {
-  /** Above 1 is more forgiving. */
-  leniency?: number;
   /** A visible hint means the learner is tracing, so hold them to more. */
   hintVisible?: boolean;
 };
+
+/**
+ * How a graded stroke should be reported back to the learner. It lives here
+ * rather than with the pad that renders it: this is the presentation-free
+ * reading of a `StrokeMatch`, produced and owned by the grading layer.
+ */
+export type StrokeFeedback = 'idle' | 'wrong' | 'backwards';
 
 export type StrokeMatch = {
   isMatch: boolean;
@@ -45,8 +50,12 @@ const DIRECTION_THRESHOLD = 0;
 /** Fréchet distance between size-normalised curves, so it needs no scaling. */
 const SHAPE_THRESHOLD = 0.4;
 const MIN_LENGTH_RATIO = 0.35;
-/** A drawn stroke is compared at a few small rotations to forgive a tilt. */
-const SHAPE_ROTATIONS = [Math.PI / 16, Math.PI / 32, 0, -Math.PI / 32, -Math.PI / 16];
+/**
+ * A drawn stroke is compared at a few small rotations to forgive a tilt.
+ * Untilted first: it is by far the common case, and the loop stops at the first
+ * rotation that clears the bar rather than computing all five.
+ */
+const SHAPE_ROTATIONS = [0, Math.PI / 32, -Math.PI / 32, Math.PI / 16, -Math.PI / 16];
 const RESAMPLE_POINTS = 24;
 
 const subtract = (a: Point, b: Point): Point => [a[0] - b[0], a[1] - b[1]];
@@ -103,9 +112,12 @@ function resample(stroke: Stroke, count = RESAMPLE_POINTS): Point[] {
   return result;
 }
 
-/** Centres a curve on its centroid and scales it to unit RMS radius. */
-function normalize(stroke: Stroke): Point[] {
-  const points = resample(stroke);
+/**
+ * Centres an already-resampled curve on its centroid and scales it to unit RMS
+ * radius. Takes resampled input on purpose — every caller already has it, and
+ * resampling again inside here was pure rework.
+ */
+function normalize(points: Point[]): Point[] {
   if (points.length === 0) return [];
 
   const centre: Point = [
@@ -146,68 +158,124 @@ export function frechetDistance(a: Point[], b: Point[]): number {
   return previous[b.length - 1];
 }
 
-/** Mean distance from each drawn point to the nearest point on the target. */
+/**
+ * Mean distance from each drawn point to the nearest point on the target.
+ * Written as loops rather than `Math.min(...points.map(…))` because that form
+ * allocates a throwaway array per drawn point, and this runs for every
+ * candidate stroke of the character.
+ */
 function averageDistanceTo(points: Point[], target: Point[]): number {
-  return average(
-    points.map((point) => Math.min(...target.map((reference) => distance(point, reference)))),
-  );
+  if (points.length === 0) return 0;
+  let total = 0;
+  for (const point of points) {
+    let nearest = Infinity;
+    for (const reference of target) {
+      const gap = distance(point, reference);
+      if (gap < nearest) nearest = gap;
+    }
+    total += nearest;
+  }
+  return total / points.length;
 }
 
-function directionMatches(points: Point[], target: Point[]): boolean {
-  const edges = (list: Point[]) =>
-    list.slice(1).map((point, index) => subtract(point, list[index]));
+function edgesOf(points: Point[]): Point[] {
+  const edges: Point[] = [];
+  for (let i = 1; i < points.length; i += 1) edges.push(subtract(points[i], points[i - 1]));
+  return edges;
+}
 
-  const drawn = edges(points);
-  const reference = edges(target);
-  if (drawn.length === 0 || reference.length === 0) return false;
+function directionMatches(drawnEdges: Point[], referenceEdges: Point[]): boolean {
+  if (drawnEdges.length === 0 || referenceEdges.length === 0) return false;
 
-  const similarities = drawn.map((edge) => {
+  let total = 0;
+  for (const edge of drawnEdges) {
     const edgeLength = Math.hypot(edge[0], edge[1]) || 1;
-    return Math.max(
-      ...reference.map((other) => {
-        const otherLength = Math.hypot(other[0], other[1]) || 1;
-        return (edge[0] * other[0] + edge[1] * other[1]) / (edgeLength * otherLength);
-      }),
-    );
-  });
+    let best = -Infinity;
+    for (const other of referenceEdges) {
+      const otherLength = Math.hypot(other[0], other[1]) || 1;
+      const similarity = (edge[0] * other[0] + edge[1] * other[1]) / (edgeLength * otherLength);
+      if (similarity > best) best = similarity;
+    }
+    total += best;
+  }
 
-  return average(similarities) > DIRECTION_THRESHOLD;
+  return total / drawnEdges.length > DIRECTION_THRESHOLD;
 }
 
-function shapeMatches(points: Point[], target: Point[], leniency: number): boolean {
-  const drawn = normalize(points);
-  const reference = normalize(target);
-  const best = Math.min(
-    ...SHAPE_ROTATIONS.map((theta) => frechetDistance(drawn, rotate(reference, theta))),
-  );
-  return best <= SHAPE_THRESHOLD * leniency;
+/**
+ * The answer is a boolean, so the loop stops at the first rotation that clears
+ * the bar. Computing the minimum over all five and then comparing does the same
+ * work four extra times, and the Fréchet DP is the most expensive gate here.
+ */
+function shapeMatches(drawnNormalized: Point[], referenceRotations: Point[][], leniency: number) {
+  const limit = SHAPE_THRESHOLD * leniency;
+  for (const rotation of referenceRotations) {
+    if (frechetDistance(drawnNormalized, rotation) <= limit) return true;
+  }
+  return false;
 }
 
-function gradeAgainst(drawn: Point[], target: Stroke, options: StrokeMatchOptions) {
-  const { leniency = 1, hintVisible = false } = options;
-  const reference = resample(target);
+/**
+ * Everything about a stroke that grading needs and that does not depend on what
+ * the learner drew. Reference strokes are module constants, so this is computed
+ * once per stroke for the life of the tab.
+ */
+type Prepared = {
+  points: Point[];
+  length: number;
+  edges: Point[];
+  rotations: Point[][];
+};
 
-  const averageDistance = averageDistanceTo(drawn, reference);
+function prepareFrom(points: Point[]): Prepared {
+  const normalized = normalize(points);
+  return {
+    points,
+    length: strokeLength(points),
+    edges: edgesOf(points),
+    rotations: SHAPE_ROTATIONS.map((theta) => rotate(normalized, theta)),
+  };
+}
+
+const preparedTargets = new WeakMap<Stroke, Prepared>();
+
+function prepareTarget(target: Stroke): Prepared {
+  const cached = preparedTargets.get(target);
+  if (cached) return cached;
+  const prepared = prepareFrom(resample(target));
+  preparedTargets.set(target, prepared);
+  return prepared;
+}
+
+function gradeAgainst(
+  drawn: Prepared,
+  drawnNormalized: Point[],
+  reference: Prepared,
+  hintVisible: boolean,
+  leniency: number,
+) {
+  const averageDistance = averageDistanceTo(drawn.points, reference.points);
   // Tracing a visible outline should be held to a tighter tolerance than
   // recalling the stroke unaided.
   const distanceAllowance = AVERAGE_DISTANCE_THRESHOLD * (hintVisible ? 0.6 : 1) * leniency;
   if (averageDistance > distanceAllowance) return { isMatch: false, averageDistance };
 
+  const last = drawn.points.length - 1;
+  const referenceLast = reference.points.length - 1;
   const endsMatch =
-    distance(drawn[0], reference[0]) <= START_END_DISTANCE_THRESHOLD * leniency &&
-    distance(drawn[drawn.length - 1], reference[reference.length - 1]) <=
+    distance(drawn.points[0], reference.points[0]) <= START_END_DISTANCE_THRESHOLD * leniency &&
+    distance(drawn.points[last], reference.points[referenceLast]) <=
       START_END_DISTANCE_THRESHOLD * leniency;
 
   const longEnough =
-    (leniency * (strokeLength(drawn) + LENGTH_OFFSET)) /
-      (strokeLength(reference) + LENGTH_OFFSET) >=
+    (leniency * (drawn.length + LENGTH_OFFSET)) / (reference.length + LENGTH_OFFSET) >=
     MIN_LENGTH_RATIO;
 
   const isMatch =
     endsMatch &&
     longEnough &&
-    directionMatches(drawn, reference) &&
-    shapeMatches(drawn, reference, leniency);
+    directionMatches(drawn.edges, reference.edges) &&
+    shapeMatches(drawnNormalized, reference.rotations, leniency);
 
   return { isMatch, averageDistance };
 }
@@ -226,16 +294,31 @@ export function matchStroke(
   index: number,
   options: StrokeMatchOptions = {},
 ): StrokeMatch {
-  const drawn = resample(dropRepeats(userStroke));
+  const { hintVisible = false } = options;
+  // resample() de-duplicates internally, so the raw points go straight in.
+  const points = resample(userStroke);
   const expected = target[index];
-  if (drawn.length < 2 || !expected) {
+  if (points.length < 2 || !expected) {
     return { isMatch: false, isBackwards: false, averageDistance: Infinity };
   }
 
-  const forward = gradeAgainst(drawn, expected, options);
+  // The drawn stroke is fixed for this whole call, so it is prepared once and
+  // reused across every candidate rather than re-derived per comparison.
+  const drawn = prepareFrom(points);
+  const drawnNormalized = normalize(points);
+  const reference = prepareTarget(expected);
+
+  const forward = gradeAgainst(drawn, drawnNormalized, reference, hintVisible, 1);
 
   if (!forward.isMatch) {
-    const reversed = gradeAgainst([...drawn].reverse(), expected, options);
+    const reversedPoints = [...points].reverse();
+    const reversed = gradeAgainst(
+      prepareFrom(reversedPoints),
+      normalize(reversedPoints),
+      reference,
+      hintVisible,
+      1,
+    );
     return {
       isMatch: false,
       isBackwards: reversed.isMatch,
@@ -244,17 +327,14 @@ export function matchStroke(
   }
 
   let closest = forward.averageDistance;
-  for (const later of target.slice(index + 1)) {
-    const grade = gradeAgainst(drawn, later, options);
+  for (let i = index + 1; i < target.length; i += 1) {
+    const grade = gradeAgainst(drawn, drawnNormalized, prepareTarget(target[i]), hintVisible, 1);
     if (grade.isMatch && grade.averageDistance < closest) closest = grade.averageDistance;
   }
 
   if (closest < forward.averageDistance) {
     const adjustment = (0.6 * (closest + forward.averageDistance)) / (2 * forward.averageDistance);
-    const stricter = gradeAgainst(drawn, expected, {
-      ...options,
-      leniency: (options.leniency ?? 1) * adjustment,
-    });
+    const stricter = gradeAgainst(drawn, drawnNormalized, reference, hintVisible, adjustment);
     return {
       isMatch: stricter.isMatch,
       isBackwards: false,

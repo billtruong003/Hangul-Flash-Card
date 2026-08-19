@@ -7,7 +7,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
-import { CHARACTERS_BY_ID, HANGUL_CHARACTERS } from '../data/hangul';
+import { CHARACTERS_BY_ID, charactersInCategories } from '../data/hangul';
 import { trackCharacterMastered, trackQuizAnswer, trackReviewStarted } from '../lib/analytics';
 import { countMastered, isMastered, recordAnswer } from '../lib/progress';
 import { getReviewCandidates } from '../lib/quiz';
@@ -39,7 +39,7 @@ export function useLettersQuiz({ state, setState, mode, chartOpen }: UseLettersQ
   const enabledKey = [...enabledCategories].sort().join(',');
 
   const enabledCharacters = useMemo(
-    () => HANGUL_CHARACTERS.filter((character) => enabledCategories.includes(character.category)),
+    () => charactersInCategories(enabledCategories),
     [enabledCategories],
   );
 
@@ -79,6 +79,13 @@ export function useLettersQuiz({ state, setState, mode, chartOpen }: UseLettersQ
   });
 
   const { restart, resetSession, answer, markAssisted, question, feedback } = quiz;
+
+  // Consulting the chart taints the card already on screen. A card dealt while
+  // the chart is open is assisted from birth (useQuiz reads `chartOpen`), so
+  // this covers the other case: the chart opening over a live card.
+  useEffect(() => {
+    if (chartOpen) markAssisted();
+  }, [chartOpen, markAssisted]);
 
   // A new learning set, a new direction or entering test mode means a fresh card.
   const isFirstRender = useRef(true);

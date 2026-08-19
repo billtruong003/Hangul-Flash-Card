@@ -123,6 +123,23 @@ export type SentenceWord = {
 /** Levels run word → phrase → sentence, which is also the unlock order. */
 export type SentenceLevel = 1 | 2 | 3;
 
+/**
+ * The theme axis, orthogonal to `SentenceLevel`: every topic is present at
+ * every level, so a learner can hold the subject still and let the difficulty
+ * move. Vietnamese labels live in `data/sentences.ts` as `SENTENCE_TOPICS`.
+ */
+export type SentenceTopic =
+  | 'greeting'
+  | 'family'
+  | 'food'
+  | 'shopping'
+  | 'travel'
+  | 'time'
+  | 'study'
+  | 'feeling'
+  | 'number'
+  | 'work';
+
 export type SentenceEntry = {
   /** Stable and ASCII, because the Korean text itself may be reworded later. */
   id: string;
@@ -131,6 +148,7 @@ export type SentenceEntry = {
   /** The sentence split for tap-to-hear. Joined with spaces it must equal `ko`. */
   words: SentenceWord[];
   level: SentenceLevel;
+  topic: SentenceTopic;
 };
 
 /** `char-to-sound` shows the Hangul glyph; `sound-to-char` shows the romaja. */

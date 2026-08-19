@@ -7,19 +7,17 @@ import { HangulChart } from './HangulChart';
 const noop = () => {};
 
 function renderChart(overrides: Partial<Parameters<typeof HangulChart>[0]> = {}) {
-  const onConsult = vi.fn();
   const onSpeak = vi.fn();
   render(
     <HangulChart
       progress={{}}
       highlightedId={null}
       canSpeak={false}
-      onConsult={onConsult}
       onSpeak={onSpeak}
       {...overrides}
     />,
   );
-  return { onConsult, onSpeak };
+  return { onSpeak };
 }
 
 function cell(name: RegExp | string) {
@@ -33,18 +31,6 @@ describe('HangulChart', () => {
       expect(screen.getByRole('heading', { name: label })).toBeInTheDocument();
     }
     expect(screen.getAllByRole('button')).toHaveLength(40);
-  });
-
-  it('reports a consult when a character is clicked', () => {
-    const { onConsult } = renderChart();
-    fireEvent.click(cell(/^ㄴ, đọc là n$/));
-    expect(onConsult).toHaveBeenCalled();
-  });
-
-  it('reports a consult when a character merely receives focus', () => {
-    const { onConsult } = renderChart();
-    cell(/^ㄴ, đọc là n$/).focus();
-    expect(onConsult).toHaveBeenCalledTimes(1);
   });
 
   it('shows the romaja and explanation of the selected character', () => {
@@ -83,7 +69,7 @@ describe('HangulChart', () => {
         currentUnassistedCorrectStreak: 5,
       }),
     };
-    renderChart({ progress, onConsult: noop, onSpeak: noop });
+    renderChart({ progress, onSpeak: noop });
 
     expect(cell(/^ㄴ, đọc là n, đã thuộc$/)).toBeInTheDocument();
     expect(cell(/^ㄱ, đọc là g$/)).toBeInTheDocument();

@@ -13,8 +13,6 @@ type HangulChartProps = {
    */
   highlightedId: string | null;
   canSpeak: boolean;
-  /** Any interaction with the chart counts as consulting it. */
-  onConsult: () => void;
   /** Takes a spoken form — always a real syllable, never a bare jamo. */
   onSpeak: (text: string, options?: { rate?: number }) => void;
 };
@@ -32,18 +30,11 @@ function cellLabel(
   return parts.join(', ');
 }
 
-export function HangulChart({
-  progress,
-  highlightedId,
-  canSpeak,
-  onConsult,
-  onSpeak,
-}: HangulChartProps) {
+export function HangulChart({ progress, highlightedId, canSpeak, onSpeak }: HangulChartProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = HANGUL_CHARACTERS.find((character) => character.id === selectedId) ?? null;
 
   const select = (character: HangulCharacter) => {
-    onConsult();
     setSelectedId(character.id);
     onSpeak(character.demoSyllable);
   };
@@ -68,7 +59,6 @@ export function HangulChart({
                       key={character.id}
                       type="button"
                       onClick={() => select(character)}
-                      onFocus={onConsult}
                       aria-pressed={isSelected}
                       aria-label={cellLabel(character, mastered, highlighted, canSpeak)}
                       className={[
@@ -123,10 +113,7 @@ export function HangulChart({
                   <>
                     <button
                       type="button"
-                      onClick={() => {
-                        onConsult();
-                        onSpeak(selected.demoSyllable);
-                      }}
+                      onClick={() => onSpeak(selected.demoSyllable)}
                       aria-label={`Nghe phát âm chữ ${selected.character}`}
                       className="rounded-full p-1 text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400"
                     >
@@ -134,10 +121,7 @@ export function HangulChart({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        onConsult();
-                        onSpeak(selected.demoSyllable, { rate: SLOW_RATE });
-                      }}
+                      onClick={() => onSpeak(selected.demoSyllable, { rate: SLOW_RATE })}
                       aria-label={`Nghe chậm chữ ${selected.character}`}
                       className="rounded-full border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 transition-colors hover:border-sky-400 hover:text-sky-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-sky-500 dark:hover:text-sky-400"
                     >

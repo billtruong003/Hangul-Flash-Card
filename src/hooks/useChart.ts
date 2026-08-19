@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 type UseChartArgs = {
   /** Test mode locks the chart away for the whole session. */
@@ -6,29 +6,9 @@ type UseChartArgs = {
   onOpened: () => void;
 };
 
-/**
- * Owns whether the reference chart is showing.
- *
- * The chart is global — writing and syllable building want it too — but only
- * the letters quiz treats consulting it as assistance. Rather than have the
- * shell import quiz internals, a surface registers a callback here and gets
- * told when the chart is touched.
- */
+/** Owns whether the reference chart is showing. Every surface can open it. */
 export function useChart({ locked, onOpened }: UseChartArgs) {
   const [chartOpen, setChartOpen] = useState(false);
-  const consumerRef = useRef<(() => void) | null>(null);
-
-  /** Returns an unsubscribe, so a surface can clean up when it unmounts. */
-  const registerConsumer = useCallback((onConsult: () => void) => {
-    consumerRef.current = onConsult;
-    return () => {
-      if (consumerRef.current === onConsult) consumerRef.current = null;
-    };
-  }, []);
-
-  const notifyConsult = useCallback(() => {
-    consumerRef.current?.();
-  }, []);
 
   const closeChart = useCallback(() => setChartOpen(false), []);
 
@@ -38,11 +18,11 @@ export function useChart({ locked, onOpened }: UseChartArgs) {
       setChartOpen(false);
       return;
     }
-    // Consulting the chart taints the card that is already on screen.
-    consumerRef.current?.();
     setChartOpen(true);
+    // Deliberately outside the state updater: React may invoke an updater more
+    // than once, which would report the chart as opened twice.
     onOpened();
   }, [chartOpen, locked, onOpened]);
 
-  return { chartOpen, toggleChart, closeChart, setChartOpen, registerConsumer, notifyConsult };
+  return { chartOpen, toggleChart, closeChart };
 }

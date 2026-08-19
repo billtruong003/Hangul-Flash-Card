@@ -46,6 +46,11 @@ trên đầu (desktop).
 
 ### Ghép chữ
 
+- **223 âm tiết**, xếp từ dễ tới khó theo bốn tầng: không batchim + nguyên âm cơ bản → không batchim
+  - nguyên âm ghép → batchim đơn giản (ㄱ ㄴ ㅁ ㅂ ㅇ) → batchim còn lại.
+- Mọi âm tiết đều là **từ thật và hay gặp ngoài đời**, không phải âm tiết vô nghĩa: 역 (nhà ga),
+  원 (won), 호 (số phòng), 층 (tầng), 관 (tòa nhà), và cả 월화수목금토일 viết tắt trên biển giờ mở
+  cửa. Mục tiêu là học xong ra đường nhìn biển hiệu thấy quen mắt.
 - Đề bài là **cách đọc + nghĩa** (`gam` — quả hồng), người học chọn phụ âm đầu, nguyên âm và phụ âm
   cuối để ráp ra `감`. Chữ Hangul không hiện ở đề, nếu không thì thành bài chép lại.
 - **Xem các chữ ghép lại thành một khối** ngay khi chọn — đây chính là quy luật cần thấy tận mắt.
@@ -56,7 +61,11 @@ trên đầu (desktop).
 
 - Nghe câu tiếng Hàn rồi **chọn nghĩa tiếng Việt** trong 4 lựa chọn. Đáp án là nghĩa chứ không phải
   chữ Hàn, nên không thể đoán bằng cách nhìn mặt chữ.
-- Ba mức: **từ đơn → cụm nói → câu**. Đáp án nhiễu lấy cùng mức.
+- **300 câu**, lọc theo **hai trục độc lập**: ba mức (**từ đơn → cụm nói → câu**, mỗi mức 100 câu) và
+  mười chủ đề (chào hỏi, gia đình, ăn uống, mua sắm, đi lại, thời gian, học tập, cảm xúc, số đếm,
+  nghề nghiệp — mỗi chủ đề 30 câu). Chọn được "câu đầy đủ về ăn uống" hoặc "tất cả chủ đề, mức từ
+  đơn". Mọi ô chủ đề × mức đều có đủ câu để dựng đáp án nhiễu, và có test canh điều đó.
+- Đáp án nhiễu lấy cùng mức và cùng bộ lọc đang bật.
 - Trả lời xong mới hiện chữ Hàn, phiên âm, và **tách từng từ — bấm vào từ nào nghe riêng từ đó**, để
   người học khoanh đúng chỗ mình nghe hụt thay vì phát lại cả câu.
 
@@ -166,6 +175,7 @@ src/
   components/     Thành phần giao diện (chỉ nhận props và vẽ, không chứa logic học)
     ActionButton.tsx   Một nút hành động, dùng chung cho hai hàng nút
     AnswerButton.tsx   Một ô đáp án + trạng thái đúng / có trợ giúp / sai
+    answerState.ts     Bảng màu trạng thái đáp án, dùng chung cho Học chữ và Nghe
     AppShell.tsx       Khung trang: header, slot cài đặt, slot nội dung, footer, slot nav
     ChartSurface.tsx   Hai vỏ bọc của bảng tra cứu: cột desktop và drawer mobile
     ConfirmDialog.tsx  Modal xác nhận tự viết
@@ -182,9 +192,9 @@ src/
   data/
     hangul.ts       40 chữ cái: RR chuẩn, âm tiết mẫu để đọc, quy luật âm đầu/âm cuối
     sections.ts     Nhãn 4 khu vực học
-    sentences.ts    30 câu nghe hiểu, ba mức, kèm nghĩa và cách tách từ
+    sentences.ts    300 câu nghe hiểu: 3 mức × 10 chủ đề, kèm nghĩa và cách tách từ
     strokes.ts      Toạ độ đường tim nét của cả 40 chữ, đúng thứ tự viết
-    syllables.ts    Âm tiết để luyện ghép, kèm nghĩa tiếng Việt
+    syllables.ts    223 âm tiết thông dụng để luyện ghép, xếp từ dễ tới khó
     tabs.ts         Nhãn hai tab của phần Học chữ
   hooks/          Nơi giữ trạng thái
     useChart.ts             Bảng tra cứu — toàn cục, nhưng chỉ Học chữ tính là trợ giúp
