@@ -440,10 +440,17 @@ describe('assisted answers', () => {
     render(<App />);
     openChart();
 
+    // Pinned deliberately: the `assisted` flag lives on the question and must
+    // stay there. If a new key ever shows up here, check it is a real surface
+    // and not transient quiz state that leaked into storage.
     expect(Object.keys(readStoredState()).sort()).toEqual([
       'bestStreak',
+      'listening',
       'progress',
       'settings',
+      'strokes',
+      'syllables',
+      'ui',
       'version',
     ]);
     expect(readStoredState().progress).toEqual({});
