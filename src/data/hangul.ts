@@ -221,7 +221,8 @@ export const HANGUL_CHARACTERS: HangulCharacter[] = [
     initialRomaja: 'pp',
     finalRomaja: null,
     category: 'tense-consonant',
-    explanation: 'Hai môi khép chặt rồi bật ra dứt khoát, không bật hơi. Không bao giờ làm batchim.',
+    explanation:
+      'Hai môi khép chặt rồi bật ra dứt khoát, không bật hơi. Không bao giờ làm batchim.',
     confusableIds: ['c-b', 'c-p', 't-tt'],
   },
   {

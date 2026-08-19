@@ -94,7 +94,8 @@ export async function initSpeech(): Promise<SpeechCapability> {
     const korean = (await loadVoices()).filter((voice) =>
       normalizeLang(voice.lang).startsWith('ko'),
     );
-    koreanVoice = korean.find((voice) => normalizeLang(voice.lang) === 'ko-kr') ?? korean[0] ?? null;
+    koreanVoice =
+      korean.find((voice) => normalizeLang(voice.lang) === 'ko-kr') ?? korean[0] ?? null;
     capability = { supported: true, hasKoreanVoice: koreanVoice !== null };
   } catch {
     capability = UNSUPPORTED;

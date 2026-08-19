@@ -72,6 +72,11 @@ và:
 
 Trả lời sai vẫn là sai như trước, dù có tra bảng hay không.
 
+Nút loa tuân theo cùng một nguyên tắc: **nghe mà lộ đáp án thì tính là có trợ giúp**. Ở tab
+`Chữ → Âm`, nghe `가` chính là được cho luôn đáp án `g`, nên bấm nghe trước khi trả lời sẽ bị tính.
+Ở tab `Âm → Chữ` thì không — nghe âm không hé lộ chữ nào viết ra âm đó, nên bạn cứ nhìn, nghe kỹ,
+rồi mới chọn.
+
 Nếu muốn tự kiểm tra nghiêm túc, bật **Ẩn bảng trong chế độ kiểm tra** trong phần cài đặt: nút mở bảng
 bị khóa suốt phiên và mọi câu trả lời đều là tự lực. Tùy chọn này mặc định tắt.
 
@@ -88,9 +93,20 @@ Phím tắt bị vô hiệu khi hộp thoại xác nhận đang mở.
 ### Âm thanh
 
 Nút **Âm thanh** dùng Web Speech API với locale `ko-KR`. Trình duyệt chỉ đọc khi bạn trả lời đúng
-hoặc khi bạn tự bấm nút loa — ứng dụng không tự phát liên tục. Nếu trình duyệt không hỗ trợ tổng hợp
-giọng nói, nút sẽ bị mờ và mọi thứ còn lại vẫn hoạt động bình thường. Với phụ âm và nguyên âm đứng
-một mình, chất lượng đọc của trình duyệt có thể không chuẩn — hãy coi đây là phần bổ trợ.
+hoặc khi bạn tự bấm nút loa — ứng dụng không tự phát liên tục.
+
+Điều quan trọng: ứng dụng **không bao giờ đưa chữ cái rời cho bộ đọc**. Ký tự `ㄱ` (U+3131) bị các
+bộ tổng hợp giọng nói đọc thành _tên chữ cái_ — "기역" — hoặc bỏ qua hẳn. Vì vậy mỗi chữ mang theo
+một âm tiết thật trong trường `demoSyllable` (`ㄱ` → `가`, `ㅏ` → `아`), và đó mới là thứ được phát.
+Chữ latin (`g`, `eo`) chỉ để nhìn, không bao giờ được đọc lên.
+
+Nếu máy bạn không cài giọng tiếng Hàn, nút sẽ bị mờ và ứng dụng **im lặng** thay vì đọc Hangul bằng
+giọng tiếng Anh — nghe như vậy còn hại hơn không nghe gì. Danh sách giọng chỉ biết được bất đồng bộ,
+nên `useSpeech` chờ sự kiện `voiceschanged`, đồng thời vẫn poll và có timeout, vì sự kiện đó có thể
+bắn ra với danh sách rỗng hoặc không bao giờ bắn.
+
+Trong bảng tra cứu, mỗi ô có dấu loa nhỏ: chạm vào ô là nghe. Ô chi tiết bên dưới có thêm nút
+**Chậm** phát ở tốc độ 0.55 để nghe rõ từng chi tiết.
 
 ## Kiến trúc
 
@@ -108,7 +124,7 @@ src/
     TabBar.tsx         Hai tab học
     icons.tsx          Icon SVG nội tuyến (không thêm thư viện)
   data/
-    hangul.ts       40 chữ cái đã gõ kiểu, kèm giải thích và danh sách chữ dễ nhầm
+    hangul.ts       40 chữ cái: RR chuẩn, âm tiết mẫu để đọc, quy luật âm đầu/âm cuối
     tabs.ts         Nhãn hai tab
   hooks/
     useDialogBehavior.ts    Bẫy focus, Esc, trả focus — dùng chung cho modal và drawer
@@ -116,11 +132,12 @@ src/
     useMediaQuery.ts        Phân biệt desktop / mobile khi CSS không đủ
     usePersistedState.ts    Đọc/ghi LocalStorage
     useQuiz.ts              Vòng đời câu hỏi: sinh, đánh dấu trợ giúp, trả lời, chuyển tiếp
+    useSpeech.ts            Máy này có đọc được tiếng Hàn không — chỉ biết được bất đồng bộ
   lib/
     analytics.ts    Lớp adapter analytics — nơi duy nhất biết tới Vercel
     progress.ts     Tính độ chính xác, điều kiện "đã thuộc", cập nhật tiến độ
     quiz.ts         Trọng số thích ứng, chọn chữ kế tiếp, sinh đáp án, lọc chữ sai
-    speech.ts       Bọc Web Speech API
+    speech.ts       Bọc Web Speech API — chọn giọng, né các lỗi đã biết của trình duyệt
     storage.ts      Đọc/ghi và **kiểm tra** dữ liệu LocalStorage
   test/
     appHarness.ts   Helper thao tác giao diện dùng chung cho test cấp ứng dụng
