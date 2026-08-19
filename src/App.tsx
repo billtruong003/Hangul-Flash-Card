@@ -19,6 +19,7 @@ import { trackCategoryChanged, trackChartOpened, trackTestModeStarted } from './
 import { primeSpeechOnGesture, speak, type SpeakOptions } from './lib/speech';
 import { LettersSection } from './sections/LettersSection';
 import { PlaceholderSection } from './sections/PlaceholderSection';
+import { SyllableSection } from './sections/SyllableSection';
 import { WritingSection } from './sections/WritingSection';
 import type { HangulCategory, LearningSection } from './types';
 
@@ -156,9 +157,11 @@ export default function App() {
       <WritingSection state={state} setState={setState} canSpeak={canSpeak} onSpeak={handleSpeak} />
     ),
     syllables: (
-      <PlaceholderSection
-        title="Ghép chữ"
-        description="Phần ráp phụ âm và nguyên âm thành âm tiết đang được xây dựng."
+      <SyllableSection
+        state={state}
+        setState={setState}
+        canSpeak={canSpeak}
+        onSpeak={handleSpeak}
       />
     ),
     listening: (
