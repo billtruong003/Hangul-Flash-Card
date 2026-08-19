@@ -6,6 +6,12 @@ tài khoản, không có backend, tiến độ lưu trong LocalStorage.
 
 ## Tính năng
 
+Ứng dụng có **bốn khu vực học**, đi theo đúng thứ tự một người học cần: nhận mặt chữ → viết được →
+ráp thành âm tiết → nghe hiểu câu. Chuyển khu vực bằng thanh dưới cùng (điện thoại) hoặc hàng nút
+trên đầu (desktop).
+
+### Học chữ
+
 - **Hai chiều học**: `Chữ → Âm` (nhìn ㄴ, chọn `n`) và `Âm → Chữ` (nhìn `n`, chọn ㄴ).
 - **40 chữ cái** chia thành 4 nhóm: phụ âm cơ bản (14), nguyên âm cơ bản (10), phụ âm căng (5),
   nguyên âm ghép (11). Bật/tắt từng nhóm trong bảng cài đặt.
@@ -26,6 +32,39 @@ tài khoản, không có backend, tiến độ lưu trong LocalStorage.
   không nhồi chung vào một nhãn.
 - **Nghe từng âm** qua Web Speech API (`ko-KR`). Máy không có giọng tiếng Hàn thì nút tự tắt và ứng
   dụng im lặng, chứ không đọc Hangul bằng giọng tiếng Anh.
+
+### Viết
+
+- **Tô theo thứ tự nét**: vệt mờ chỉ nét đang tới, chấm xanh đánh số chỉ chỗ đặt bút. Nút **Xem mẫu**
+  vẽ lại từng nét một.
+- **Chấm điểm hình học, chạy hoàn toàn offline** — không tải model, không gọi mạng. Mỗi nét phải qua
+  năm cửa độc lập: khoảng cách trung bình, điểm đầu/cuối, hướng đi, hình dáng và độ dài.
+- **Phân biệt "sai nét" với "đúng nét nhưng ngược chiều"**. Đây mới là chỗ dạy được _thứ tự_ thay vì
+  chỉ dạy hình dáng: ㅇ vẽ ngược chiều kim đồng hồ trông y hệt lúc xong nhưng vẫn bị loại.
+- **Ẩn vệt mờ** để viết từ trí nhớ. Khi đang tô thì ngưỡng chấm chặt hơn so với lúc viết chay.
+- Điểm 0–100 mỗi lần viết; nét phải làm lại chỉ được nửa điểm.
+
+### Ghép chữ
+
+- Đề bài là **cách đọc + nghĩa** (`gam` — quả hồng), người học chọn phụ âm đầu, nguyên âm và phụ âm
+  cuối để ráp ra `감`. Chữ Hangul không hiện ở đề, nếu không thì thành bài chép lại.
+- **Xem các chữ ghép lại thành một khối** ngay khi chọn — đây chính là quy luật cần thấy tận mắt.
+- Sau khi đúng thì hiện rõ quy luật vị trí: `ㅁ` ở cuối âm tiết đọc `m`.
+- ㄸ ㅃ ㅉ không có trong danh sách phụ âm cuối, vì chúng mở đầu âm tiết được nhưng không đóng được.
+
+### Nghe
+
+- Nghe câu tiếng Hàn rồi **chọn nghĩa tiếng Việt** trong 4 lựa chọn. Đáp án là nghĩa chứ không phải
+  chữ Hàn, nên không thể đoán bằng cách nhìn mặt chữ.
+- Ba mức: **từ đơn → cụm nói → câu**. Đáp án nhiễu lấy cùng mức.
+- Trả lời xong mới hiện chữ Hàn, phiên âm, và **tách từng từ — bấm vào từ nào nghe riêng từ đó**, để
+  người học khoanh đúng chỗ mình nghe hụt thay vì phát lại cả câu.
+
+### Dùng chung cho mọi khu vực
+
+- **Bảng chữ Hangul tra cứu** và **nút âm thanh** luôn với tới được, ở khu vực nào cũng vậy.
+- **Tiến độ tách riêng từng khu vực**: luyện viết không làm xê dịch tiến độ trắc nghiệm, và ngược lại.
+- **Mở lại đúng chỗ đang dở** — khu vực cuối cùng bạn ở được ghi nhớ.
 - **Phím tắt trên desktop**, dark mode theo cài đặt hệ thống, tôn trọng `prefers-reduced-motion`.
 
 ## Bắt đầu
@@ -60,7 +99,8 @@ Mở địa chỉ mà Vite in ra (mặc định http://localhost:5173).
 
 ## Cách dùng
 
-1. Chọn tab `Chữ → Âm` hoặc `Âm → Chữ`.
+0. Chọn khu vực học ở thanh dưới cùng: **Học chữ**, **Viết**, **Ghép chữ** hay **Nghe**.
+1. Trong **Học chữ**, chọn tab `Chữ → Âm` hoặc `Âm → Chữ`.
 2. Chạm vào một trong bốn đáp án. Đúng thì thẻ chuyển tiếp sau ~0,7 giây; sai thì đáp án đúng được
    tô xanh và thẻ chờ ~1,35 giây để bạn kịp nhìn.
 3. Mở biểu tượng bánh răng để bật/tắt nhóm chữ đang học. Luôn phải giữ ít nhất một nhóm.
@@ -91,13 +131,15 @@ bị khóa suốt phiên và mọi câu trả lời đều là tự lực. Tùy 
 
 ### Phím tắt (desktop)
 
-| Phím    | Tác dụng                                        |
-| ------- | ----------------------------------------------- |
-| `1`–`4` | Chọn đáp án tương ứng                           |
-| `←` `→` | Đổi tab (không hoạt động khi đang hiện kết quả) |
-| `R`     | Bật/tắt chế độ ôn chữ sai                       |
+| Phím            | Tác dụng                                                       |
+| --------------- | -------------------------------------------------------------- |
+| `1`–`4`         | Chọn đáp án tương ứng                                          |
+| `←` `→`         | Đổi tab con trong khu vực đang mở (khóa khi đang hiện kết quả) |
+| `Shift`+`←` `→` | Chuyển sang khu vực học khác                                   |
+| `R`             | Bật/tắt chế độ ôn chữ sai                                      |
 
-Phím tắt bị vô hiệu khi hộp thoại xác nhận đang mở.
+Phím mũi tên không kèm `Shift` thuộc về khu vực đang mở, còn kèm `Shift` thì luôn là chuyển khu vực —
+nhờ vậy không bao giờ có hai nghĩa cùng lúc. Phím tắt bị vô hiệu khi hộp thoại xác nhận đang mở.
 
 ### Âm thanh
 
@@ -121,44 +163,69 @@ Trong bảng tra cứu, mỗi ô có dấu loa nhỏ: chạm vào ô là nghe. �
 
 ```text
 src/
-  components/     Thành phần giao diện (không chứa logic học)
-    ActionBar.tsx      5 nút hành động
+  components/     Thành phần giao diện (chỉ nhận props và vẽ, không chứa logic học)
+    ActionButton.tsx   Một nút hành động, dùng chung cho hai hàng nút
     AnswerButton.tsx   Một ô đáp án + trạng thái đúng / có trợ giúp / sai
+    AppShell.tsx       Khung trang: header, slot cài đặt, slot nội dung, footer, slot nav
     ChartSurface.tsx   Hai vỏ bọc của bảng tra cứu: cột desktop và drawer mobile
     ConfirmDialog.tsx  Modal xác nhận tự viết
+    GlobalActions.tsx  Nút dùng chung mọi khu vực: bảng tra, âm thanh, xóa tiến độ
     HangulChart.tsx    Lưới 40 chữ + ô chi tiết cách đọc
+    QuizActions.tsx    Nút chỉ thuộc phần Học chữ: bắt đầu lại, ôn chữ sai
     QuizCard.tsx       Thẻ câu hỏi + vùng aria-live
+    SectionNav.tsx     Chuyển giữa 4 khu vực — là <nav>, KHÔNG phải tablist thứ hai
     SettingsPanel.tsx  Bật/tắt nhóm chữ và chế độ kiểm tra
     StatsPanel.tsx     Thống kê phiên + thanh tiến độ
-    TabBar.tsx         Hai tab học
+    StrokePad.tsx      Vùng viết SVG: vệt mờ, số nét, thu nét người dùng vẽ
+    TabBar.tsx         Tab con TRONG một khu vực (tự ẩn khi chỉ có một tab)
     icons.tsx          Icon SVG nội tuyến (không thêm thư viện)
   data/
     hangul.ts       40 chữ cái: RR chuẩn, âm tiết mẫu để đọc, quy luật âm đầu/âm cuối
-    tabs.ts         Nhãn hai tab
-  hooks/
+    sections.ts     Nhãn 4 khu vực học
+    sentences.ts    30 câu nghe hiểu, ba mức, kèm nghĩa và cách tách từ
+    strokes.ts      Toạ độ đường tim nét của cả 40 chữ, đúng thứ tự viết
+    syllables.ts    Âm tiết để luyện ghép, kèm nghĩa tiếng Việt
+    tabs.ts         Nhãn hai tab của phần Học chữ
+  hooks/          Nơi giữ trạng thái
+    useChart.ts             Bảng tra cứu — toàn cục, nhưng chỉ Học chữ tính là trợ giúp
     useDialogBehavior.ts    Bẫy focus, Esc, trả focus — dùng chung cho modal và drawer
+    useKeyboardShortcuts.ts Phím tắt, gắn vào window
     useLearningTelemetry.ts Bộ đếm phiên học trong bộ nhớ cho sự kiện analytics
+    useLettersQuiz.ts       Toàn bộ dây nối của phần Học chữ
+    useListening.ts         Chọn câu, sinh đáp án, chấm, đếm số lần nghe lại
     useMediaQuery.ts        Phân biệt desktop / mobile khi CSS không đủ
     usePersistedState.ts    Đọc/ghi LocalStorage
     useQuiz.ts              Vòng đời câu hỏi: sinh, đánh dấu trợ giúp, trả lời, chuyển tiếp
+    useSectionNav.ts        Khu vực đang mở + chiều học của phần Học chữ
     useSpeech.ts            Máy này có đọc được tiếng Hàn không — chỉ biết được bất đồng bộ
-  lib/
+    useStrokePractice.ts    Nét nào đang tới, chấm điểm, ghi kết quả
+    useSyllableBuilder.ts   Âm tiết đang hỏi, các chữ đã chọn, kiểm tra
+  lib/            Hàm thuần, không biết gì về React
     analytics.ts    Lớp adapter analytics — nơi duy nhất biết tới Vercel
     progress.ts     Tính độ chính xác, điều kiện "đã thuộc", cập nhật tiến độ
     quiz.ts         Trọng số thích ứng, chọn chữ kế tiếp, sinh đáp án, lọc chữ sai
     speech.ts       Bọc Web Speech API — chọn giọng, né các lỗi đã biết của trình duyệt
     storage.ts      Đọc/ghi và **kiểm tra** dữ liệu LocalStorage
+    stroke.ts       Chấm nét viết tay: 5 cửa độc lập + phát hiện vẽ ngược
+    syllable.ts     Ghép/tách âm tiết và phiên âm RR — bọc es-hangul
+  sections/       Tầng lắp ghép: nối hook vào component, mỗi khu vực một file
+    LettersSection.tsx
+    ListeningSection.tsx
+    SyllableSection.tsx
+    WritingSection.tsx
   test/
     appHarness.ts   Helper thao tác giao diện dùng chung cho test cấp ứng dụng
     fixtures.ts     PRNG có seed, factory tiến độ, transport analytics ghi lại
-    setup.ts        Cấu hình jsdom cho Vitest
+    setup.ts        Cấu hình jsdom cho Vitest + vá PointerEvent mà jsdom không có
   types/index.ts    Kiểu dùng chung
-  App.tsx           Ghép các phần lại, xử lý phím tắt và trạng thái bảng tra cứu
+  App.tsx           Chọn khu vực nào đang hiện và nối các mảnh lại
   main.tsx          Gốc ứng dụng — nơi gắn <Analytics /> và <SpeedInsights />
 ```
 
 Nguyên tắc phân tách: `lib/` là các hàm thuần, không biết gì về React; `hooks/` giữ trạng thái;
-`components/` chỉ nhận props và vẽ. Nhờ vậy toàn bộ thuật toán học kiểm thử được mà không cần render.
+`components/` chỉ nhận props và vẽ; `sections/` là chỗ duy nhất state gặp markup — mỗi khu vực học
+một file. Nhờ vậy toàn bộ thuật toán học (chọn câu hỏi, chấm nét viết, ghép âm tiết) kiểm thử được
+mà không cần render gì cả.
 
 ## Thuật toán học
 
@@ -219,10 +286,14 @@ Khóa LocalStorage: `hangul-flashcards` (bản cũ nằm ở `hangul-flashcards:
 
 ```ts
 type PersistedState = {
-  version: 2;
-  progress: Record<string, CharacterProgress>;
+  version: 3;
+  progress: Record<string, CharacterProgress>; // Học chữ
+  strokes: Record<string, StrokeProgress>; // Viết   — khóa theo id chữ
+  syllables: Record<string, SyllableProgress>; // Ghép  — khóa theo chính âm tiết
+  listening: Record<string, ListeningProgress>; // Nghe  — khóa theo id câu
   settings: { enabledCategories: string[]; soundEnabled: boolean; testMode: boolean };
   bestStreak: number;
+  ui: { section: 'letters' | 'writing' | 'syllables' | 'listening' };
 };
 
 type CharacterProgress = {
@@ -241,11 +312,23 @@ type CharacterProgress = {
 quay về mặc định. JSON hỏng cũng không làm ứng dụng chết. Trạng thái tạm — câu hỏi hiện tại, kết quả
 vừa hiện, thống kê phiên, và **cờ đã tra bảng của câu hỏi đang hiển thị** — không được lưu.
 
+Bốn khu vực giữ tiến độ ở bốn map **ngang hàng nhau**, không lồng vào trong `progress`. Nhờ vậy dữ
+liệu version 2 nằm nguyên vẹn trong blob version 3 — người đang học dở bảng chữ cái không mất gì khi
+nâng cấp. `ui` tách khỏi `settings` vì vị trí đang xem không phải là lựa chọn của người dùng.
+
+`isKnownSentenceId` đặc biệt quan trọng: **kho câu sẽ thay đổi giữa các bản phát hành**, và lặng lẽ
+bỏ id không còn tồn tại đúng là hành vi mong muốn.
+
+### Nâng cấp từ version 2
+
+Thuần **cộng thêm**. Ba khu vực mới chưa từng tồn tại trước version 3 nên không có gì để chuyển đổi —
+chúng đơn giản bắt đầu rỗng, còn `progress`, `settings` và `bestStreak` giữ nguyên từng byte.
+
 ### Nâng cấp từ version 1
 
 Version 1 chưa có bảng tra cứu, nên mọi câu trả lời đã ghi đều là tự lực. Khi đọc dữ liệu cũ:
 
-| Version 1              | Version 2                        |
+| Version 1              | Version 2 trở đi                 |
 | ---------------------- | -------------------------------- |
 | `correctCount`         | `unassistedCorrectCount`         |
 | `currentCorrectStreak` | `currentUnassistedCorrectStreak` |
@@ -256,8 +339,9 @@ Version 1 chưa có bảng tra cứu, nên mọi câu trả lời đã ghi đề
 để chữ đã học không bị mất mức ưu tiên sau khi nâng cấp. Dữ liệu nằm ở khóa cũ được đọc, chuyển đổi,
 ghi sang khóa mới, rồi khóa cũ mới bị xóa — không mất tiến độ nào.
 
-Nút **Bắt đầu lại phiên** chỉ xóa thống kê phiên, giữ nguyên tiến độ dài hạn. Nút **Xóa toàn bộ tiến
-độ** mở hộp thoại xác nhận tự viết (không dùng `confirm()` của trình duyệt) và xóa sạch dữ liệu.
+Nút **Bắt đầu lại phiên** chỉ xóa thống kê phiên của phần Học chữ, giữ nguyên tiến độ dài hạn. Nút
+**Xóa toàn bộ tiến độ** mở hộp thoại xác nhận tự viết (không dùng `confirm()` của trình duyệt) và xóa
+sạch dữ liệu của **cả bốn khu vực**.
 
 ## Analytics
 
@@ -322,6 +406,10 @@ nào trong đó.
 | `learning_session_started`    | Câu trả lời đầu tiên của một phiên                                                      | không có                                                    |
 | `learning_session_completed`  | Người dùng bấm "Bắt đầu lại phiên" hoặc xóa tiến độ, sau khi đã trả lời ít nhất một câu | `answers`, `accuracy`, `assisted` (đều đã gom nhóm)         |
 | `learning_categories_changed` | Bật/tắt một nhóm chữ                                                                    | `enabledCount`                                              |
+| `section_changed`             | Chuyển sang khu vực học khác                                                            | `section`                                                   |
+| `stroke_attempt`              | Viết xong một chữ                                                                       | `category`, `clean` (không nét nào phải làm lại)            |
+| `syllable_built`              | Kiểm tra một âm tiết đã ghép và ghép đúng                                               | `hasBatchim`, `correct`                                     |
+| `listening_answer`            | Chọn nghĩa cho một câu nghe                                                             | `level`, `correct`, `replayed`                              |
 
 Số liệu phiên học được gom nhóm trước khi rời khỏi trình duyệt, không bao giờ gửi con số chính xác:
 
@@ -333,6 +421,11 @@ Số liệu phiên học được gom nhóm trước khi rời khỏi trình duy
 Sự kiện chỉ phát khi người dùng thật sự hành động. React render lại không sinh thêm sự kiện, và
 `character_mastered` chỉ phát đúng một lần ở thời điểm chuyển trạng thái chứ không phát lại mỗi lần
 trả lời đúng một chữ đã thuộc.
+
+`quiz_answer` **không** mang thuộc tính khu vực, dù giờ đã có bốn khu vực: sự kiện đó chỉ phát ra từ
+phần Học chữ, nên thêm vào chỉ là gắn một hằng số vào mọi câu trả lời. Muốn biết người học đi lại
+giữa các khu vực thì đọc `section_changed`. Có một test khóa cứng đúng tập khóa của `quiz_answer` để
+điều này không bị vô tình phá.
 
 ### Quyền riêng tư
 
