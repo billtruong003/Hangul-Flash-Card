@@ -37,71 +37,87 @@ function normalizeLang(lang: string): string {
   return lang.replace('_', '-').toLowerCase();
 }
 
-let voicesPromise: Promise<SpeechSynthesisVoice[]> | null = null;
-
-/**
- * Chrome, Edge and Android populate the voice list asynchronously and return an
- * empty array on the first call. `voiceschanged` is the documented signal, but
- * it can fire with an empty list, fire before a listener is attached, or never
- * fire at all — so the poll and the timeout are load-bearing, not belt-and-braces.
- * An empty list is a legitimate final answer: Chrome on Linux ships no voices.
- */
-function loadVoices(): Promise<SpeechSynthesisVoice[]> {
-  if (voicesPromise) return voicesPromise;
-
-  voicesPromise = new Promise((resolve) => {
-    const synth = window.speechSynthesis;
-    const immediate = synth.getVoices();
-    if (immediate.length > 0) {
-      resolve(immediate);
-      return;
-    }
-
-    let pollId = 0;
-    let timeoutId = 0;
-    let settled = false;
-
-    const finish = (voices: SpeechSynthesisVoice[]) => {
-      if (settled) return;
-      settled = true;
-      window.clearInterval(pollId);
-      window.clearTimeout(timeoutId);
-      synth.removeEventListener('voiceschanged', check);
-      resolve(voices);
-    };
-
-    function check() {
-      const voices = synth.getVoices();
-      if (voices.length > 0) finish(voices);
-    }
-
-    synth.addEventListener('voiceschanged', check);
-    pollId = window.setInterval(check, VOICE_POLL_INTERVAL_MS);
-    timeoutId = window.setTimeout(() => finish(synth.getVoices()), VOICE_LOAD_TIMEOUT_MS);
-  });
-
-  return voicesPromise;
-}
-
 let koreanVoice: SpeechSynthesisVoice | null = null;
 let capability: SpeechCapability = UNSUPPORTED;
 
-/** Resolves once the voice list has settled. Safe to call more than once. */
-export async function initSpeech(): Promise<SpeechCapability> {
-  if (!isSpeechSupported()) return UNSUPPORTED;
+type Listener = (capability: SpeechCapability) => void;
+const listeners = new Set<Listener>();
+let watching = false;
+
+function pickKoreanVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const korean = voices.filter((voice) => normalizeLang(voice.lang).startsWith('ko'));
+  return korean.find((voice) => normalizeLang(voice.lang) === 'ko-kr') ?? korean[0] ?? null;
+}
+
+/** Re-reads the voice list and tells everyone if the answer changed. */
+function refresh(): SpeechCapability {
+  if (!isSpeechSupported()) return capability;
 
   try {
-    const korean = (await loadVoices()).filter((voice) =>
-      normalizeLang(voice.lang).startsWith('ko'),
-    );
-    koreanVoice =
-      korean.find((voice) => normalizeLang(voice.lang) === 'ko-kr') ?? korean[0] ?? null;
-    capability = { supported: true, hasKoreanVoice: koreanVoice !== null };
+    koreanVoice = pickKoreanVoice(window.speechSynthesis.getVoices());
   } catch {
-    capability = UNSUPPORTED;
+    koreanVoice = null;
   }
 
+  const next: SpeechCapability = { supported: true, hasKoreanVoice: koreanVoice !== null };
+  if (
+    next.supported !== capability.supported ||
+    next.hasKoreanVoice !== capability.hasKoreanVoice
+  ) {
+    capability = next;
+    for (const listener of listeners) listener(capability);
+  }
   return capability;
+}
+
+/**
+ * Watches the voice list for as long as the page lives, rather than sampling it
+ * once at startup.
+ *
+ * The one-shot version deadlocked on phones. iOS Safari commonly reports an
+ * empty voice list until speech has been triggered from a real user gesture,
+ * and Android populates it late — so a startup check concludes "no Korean
+ * voice", and if the UI then disables its own sound control the user can never
+ * produce the gesture that would have loaded the voices. `voiceschanged` also
+ * fires more than once on some engines, which the promise-based version threw
+ * away after the first resolution.
+ */
+function startWatching(): void {
+  if (watching || !isSpeechSupported()) return;
+  watching = true;
+
+  const synth = window.speechSynthesis;
+  synth.addEventListener('voiceschanged', refresh);
+
+  // voiceschanged can fire with an empty list, fire before this listener was
+  // attached, or never fire at all, so polling backs it up for a while.
+  let elapsed = 0;
+  const poll = window.setInterval(() => {
+    elapsed += VOICE_POLL_INTERVAL_MS;
+    refresh();
+    if (capability.hasKoreanVoice || elapsed >= VOICE_LOAD_TIMEOUT_MS) window.clearInterval(poll);
+  }, VOICE_POLL_INTERVAL_MS);
+
+  refresh();
+}
+
+/**
+ * Reports what this device can do, now and whenever that changes. Returns an
+ * unsubscribe.
+ */
+export function subscribeToSpeech(listener: Listener): () => void {
+  if (!isSpeechSupported()) {
+    listener(UNSUPPORTED);
+    return () => {};
+  }
+
+  listeners.add(listener);
+  startWatching();
+  listener(capability);
+
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 // Chrome garbage-collects an utterance held only by a local variable, cutting
@@ -173,11 +189,18 @@ export function primeSpeechOnGesture(): void {
   } catch {
     // Priming is opportunistic; a failure just means the first tap is silent.
   }
+
+  // On iOS this gesture is often what makes the voice list appear at all, so
+  // look again now and shortly after.
+  refresh();
+  window.setTimeout(refresh, 300);
+  window.setTimeout(refresh, 1200);
 }
 
 /** Test seam — drops every cached decision so a suite can start from scratch. */
 export function resetSpeechForTests(): void {
-  voicesPromise = null;
+  listeners.clear();
+  watching = false;
   koreanVoice = null;
   capability = UNSUPPORTED;
   activeUtterance = null;

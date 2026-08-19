@@ -6,6 +6,7 @@ import { GlobalActions } from './components/GlobalActions';
 import { HangulChart } from './components/HangulChart';
 import { SectionNav } from './components/SectionNav';
 import { SettingsPanel } from './components/SettingsPanel';
+import { SpeechNotice } from './components/SpeechNotice';
 import { SECTIONS, SECTION_IDS } from './data/sections';
 import { TABS } from './data/tabs';
 import { useChart } from './hooks/useChart';
@@ -202,10 +203,17 @@ export default function App() {
             chartOpen={chartOpen}
             chartLocked={testMode}
             soundEnabled={settings.soundEnabled}
-            speechSupported={speech.hasKoreanVoice}
+            speechSupported={speech.supported}
+            hasKoreanVoice={speech.hasKoreanVoice}
             onToggleChart={toggleChart}
             onToggleSound={toggleSound}
             onRequestClearProgress={() => setConfirmOpen(true)}
+          />
+
+          <SpeechNotice
+            soundEnabled={settings.soundEnabled}
+            speechSupported={speech.supported}
+            hasKoreanVoice={speech.hasKoreanVoice}
           />
 
           {surfaces[section]}

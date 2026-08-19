@@ -155,10 +155,13 @@ describe('ListeningSection', () => {
     for (const meaning of shown) expect(levelThree).toContain(meaning);
   });
 
-  it('says so plainly when the device cannot speak Korean', () => {
+  it('asks for sound to be switched on rather than sitting there mute', () => {
+    // Why *sound is off* is this surface's business. Why a device with sound on
+    // still says nothing — no Korean voice installed — is the shell's, and is
+    // covered in App.speech.test.tsx.
     openListening({ sound: false });
 
-    expect(screen.getByText(/Máy không có giọng tiếng Hàn/)).toBeInTheDocument();
+    expect(screen.getByText(/để nghe câu/)).toBeInTheDocument();
     expect(within(panel()).getByRole('button', { name: 'Phát câu tiếng Hàn' })).toBeDisabled();
   });
 

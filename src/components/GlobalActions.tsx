@@ -5,7 +5,10 @@ type GlobalActionsProps = {
   chartOpen: boolean;
   chartLocked: boolean;
   soundEnabled: boolean;
+  /** Whether this browser has speech synthesis at all. */
   speechSupported: boolean;
+  /** Whether a Korean voice has actually been found — may become true later. */
+  hasKoreanVoice: boolean;
   onToggleChart: () => void;
   onToggleSound: () => void;
   onRequestClearProgress: () => void;
@@ -28,6 +31,7 @@ export function GlobalActions({
   chartLocked,
   soundEnabled,
   speechSupported,
+  hasKoreanVoice,
   onToggleChart,
   onToggleSound,
   onRequestClearProgress,
@@ -47,8 +51,17 @@ export function GlobalActions({
         icon={soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
         label={soundEnabled ? 'Âm thanh: Bật' : 'Âm thanh: Tắt'}
         ariaLabel={soundEnabled ? 'Tắt âm thanh phát âm' : 'Bật âm thanh phát âm'}
-        title={speechSupported ? undefined : 'Máy này không có giọng đọc tiếng Hàn'}
+        title={
+          !speechSupported
+            ? 'Trình duyệt này không đọc được'
+            : hasKoreanVoice
+              ? undefined
+              : 'Chưa tìm thấy giọng tiếng Hàn trên máy'
+        }
         pressed={soundEnabled}
+        // Deliberately not gated on hasKoreanVoice. Phones often reveal their
+        // voice list only once speech has been triggered by a tap, so disabling
+        // this would remove the very gesture that makes the voices appear.
         disabled={!speechSupported}
         onClick={onToggleSound}
       />

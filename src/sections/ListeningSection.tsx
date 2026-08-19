@@ -72,8 +72,7 @@ export function ListeningSection({ state, setState, canSpeak }: ListeningSection
 
       {!canSpeak && (
         <p className="rounded-xl bg-amber-100 px-3 py-2 text-center text-xs font-medium text-amber-900 sm:text-sm dark:bg-amber-950/50 dark:text-amber-200">
-          Bật <span className="font-semibold">Âm thanh</span> để nghe. Máy không có giọng tiếng Hàn
-          thì phần này chưa dùng được.
+          Bật <span className="font-semibold">Âm thanh</span> để nghe câu.
         </p>
       )}
 
