@@ -17,6 +17,14 @@ type TabBarProps = {
  * Renders nothing for a single tab: a one-tab tablist is noise for screen
  * reader users, and three of the four surfaces start with exactly one sub-mode.
  */
+// Tailwind only ships classes it can see in the source, so the column count
+// has to be a literal rather than an interpolated `grid-cols-${n}`.
+const COLUMNS: Record<number, string> = {
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+};
+
 export function TabBar({ tabs, activeId, panelId, label, onChange }: TabBarProps) {
   if (tabs.length < 2) return null;
 
@@ -24,7 +32,10 @@ export function TabBar({ tabs, activeId, panelId, label, onChange }: TabBarProps
     <div
       role="tablist"
       aria-label={label}
-      className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 dark:bg-slate-800/70"
+      className={[
+        'grid gap-1 rounded-2xl bg-slate-200/70 p-1 dark:bg-slate-800/70',
+        COLUMNS[tabs.length] ?? 'grid-cols-2',
+      ].join(' ')}
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeId;

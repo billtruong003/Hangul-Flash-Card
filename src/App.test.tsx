@@ -523,7 +523,10 @@ describe('điều hướng giữa các khu vực', () => {
     gotoSection('Nghe');
 
     expect(answerButtons()).toHaveLength(0);
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    // The quiz-direction tabs are gone. Listening has sub-tabs of its own, so
+    // this asserts the letters ones specifically rather than "no tabs at all".
+    expect(screen.queryByRole('tab', { name: 'Chữ → Âm' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Từ đơn' })).toBeInTheDocument();
     expect(readStoredState().ui.section).toBe('listening');
   });
 

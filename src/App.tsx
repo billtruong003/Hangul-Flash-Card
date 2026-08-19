@@ -18,7 +18,7 @@ import { useSpeech } from './hooks/useSpeech';
 import { trackCategoryChanged, trackChartOpened, trackTestModeStarted } from './lib/analytics';
 import { primeSpeechOnGesture, speak, type SpeakOptions } from './lib/speech';
 import { LettersSection } from './sections/LettersSection';
-import { PlaceholderSection } from './sections/PlaceholderSection';
+import { ListeningSection } from './sections/ListeningSection';
 import { SyllableSection } from './sections/SyllableSection';
 import { WritingSection } from './sections/WritingSection';
 import type { HangulCategory, LearningSection } from './types';
@@ -164,12 +164,7 @@ export default function App() {
         onSpeak={handleSpeak}
       />
     ),
-    listening: (
-      <PlaceholderSection
-        title="Nghe hiểu"
-        description="Phần nghe câu và chọn nghĩa đang được xây dựng."
-      />
-    ),
+    listening: <ListeningSection state={state} setState={setState} canSpeak={canSpeak} />,
   };
 
   return (
