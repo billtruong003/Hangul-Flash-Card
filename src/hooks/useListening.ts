@@ -84,12 +84,12 @@ export function useListening({ state, setState, soundEnabled }: UseListeningArgs
 
   const record = useCallback(
     (entry: SentenceEntry, correct: boolean, replayCount: number) => {
-      setState((state) => {
-        const previous = state.listening[entry.id] ?? emptyListeningProgress();
+      setState((current) => {
+        const previous = current.listening[entry.id] ?? emptyListeningProgress();
         return {
-          ...state,
+          ...current,
           listening: {
-            ...state.listening,
+            ...current.listening,
             [entry.id]: {
               heardCount: previous.heardCount + 1,
               correctCount: previous.correctCount + (correct ? 1 : 0),
